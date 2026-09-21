@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, Check, Copy, CornerDownLeft, FilePlus, Play, RefreshCw, Send, Settings, Sparkles, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bot, Check, Copy, FilePlus, Play, RefreshCw, Send, Settings, Sparkles, Trash2, X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { PanelHeader, type HeadAction } from "../panel/PanelHeader";
 import { useSessions } from "../store/sessions";
@@ -142,8 +142,8 @@ export function AiPanel({ panelKey }: { panelKey: string }) {
       } else if (lower.includes("env") || lower.includes("tạo file") || lower.includes("cấu hình")) {
         demoResponse =
           "Dưới đây là nội dung file cấu hình mẫu `.env`:\n\n```text\n# BinBox Environment Configuration\nPORT=3000\nNODE_ENV=development\nBINBOX_WORKSPACE_MODE=spiral\nAPI_SECRET_KEY=your_secret_key_here\n```\n\nBạn có thể bấm nút **Lưu vào File** bên dưới để ghi thẳng file này vào dự án!";
-      } else {
-        demoResponse = `Tôi đã nhận yêu cầu của bạn: "${textToSend}".\n\n💡 **Gợi ý:** Để kích hoạt mô hình AI thật sự (LLM), bạn có thể bấm vào nút **Cài đặt AI** (biểu tượng bánh răng ở góc trên) để nhập API Key hoặc kết nối với Ollama local (\`http://localhost:11434/v1\`).\n\nDưới đây là câu lệnh hữu ích bạn có thể thử ngay:\n\n```bash\nGet-ChildItem -Directory\n````;
+        demoResponse =
+          `Tôi đã nhận yêu cầu của bạn: "${textToSend}".\n\n💡 **Gợi ý:** Để kích hoạt mô hình AI thật sự (LLM), bạn có thể bấm vào nút **Cài đặt AI** (biểu tượng bánh răng ở góc trên) để nhập API Key hoặc kết nối với Ollama local (\`http://localhost:11434/v1\`).\n\nDưới đây là câu lệnh hữu ích bạn có thể thử ngay:\n\n\`\`\`bash\nGet-ChildItem -Directory\n\`\`\``;
       }
 
       setMessages((prev) => [
