@@ -1,9 +1,9 @@
 ---
-name: tethys-ui-ux
-description: Use when designing, reviewing, or changing Tethys UI, Material You colors, expressive motion, floating chrome, responsive states, or visual QA. Enforces terminal-safe motion and the repo's flat/glass invariants.
+name: binbox-ui-ux
+description: Use when designing, reviewing, or changing BinBox UI, Material You colors, expressive motion, floating chrome, responsive states, or visual QA. Enforces terminal-safe motion and the repo's flat/glass invariants.
 ---
 
-# Tethys UI/UX
+# BinBox UI/UX
 
 1. Read [references/design-language.md](references/design-language.md) before editing UI.
 2. Identify every affected surface mode and interaction state.

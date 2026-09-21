@@ -47,7 +47,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUwOERFMEY5RDIyNjBENkUKUldSdURTYlMrZUNOVU5mb0dsZ2ZoUUNBZTdxWW51eDNIMnEvWFVTS3hVb25vQ1c0b0xBeDc3c3AK",
       "endpoints": [
-        "https://github.com/QuangquyNguyenvo/Tethys/releases/latest/download/latest.json"
+        "https://github.com/Shadow/BinBox/releases/latest/download/latest.json"
       ]
     }
   }
