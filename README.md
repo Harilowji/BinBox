@@ -9,7 +9,7 @@
 
   [![Platform](https://img.shields.io/badge/Platform-Windows%2011%20%7C%2010-38bdf8?style=for-the-badge&logo=windows11&logoColor=white&labelColor=0d1527)](#)
   [![License](https://img.shields.io/badge/License-MIT-c084fc?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=0d1527)](LICENSE)
-  [![Author](https://img.shields.io/badge/Author-Shadow-818cf8?style=for-the-badge&logoColor=white&labelColor=0d1527)](#)
+  [![Author](https://img.shields.io/badge/Author-Harilowji-818cf8?style=for-the-badge&logoColor=white&labelColor=0d1527)](https://github.com/Harilowji)
 
   <br />
   
@@ -92,7 +92,8 @@
 Prerequisites: Node.js 20+, Rust, Visual Studio C++ Build Tools.
 
 ```bash
-cd app
+git clone https://github.com/Harilowji/BinBox.git
+cd BinBox/app
 npm install
 npm run tauri dev
 ```
@@ -110,5 +111,5 @@ npm run tauri build
 <div align="center">
   <img src="assets/dividers/divider.svg" width="100%" />
   <br /><br />
-  MIT License · Developed and customized with passion by <b>Shadow</b>
+  MIT License · Developed and customized with passion by <b>Harilowji (Shadow)</b>
 </div>
