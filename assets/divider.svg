@@ -1,0 +1,101 @@
+<svg width="900" height="36" viewBox="0 0 900 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Wave Line Gradient -->
+    <linearGradient id="ref-wave-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0" />
+      <stop offset="20%" stop-color="#38bdf8" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#53d7d6" stop-opacity="0.95" />
+      <stop offset="80%" stop-color="#818cf8" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Laser Beam Gradient -->
+    <linearGradient id="ref-laser-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="100%" stop-color="#c084fc" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Central Pearl Glow -->
+    <radialGradient id="pearl-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#53d7d6" stop-opacity="0.8" />
+      <stop offset="40%" stop-color="#818cf8" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0" />
+    </radialGradient>
+
+    <filter id="pearl-blur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <style>
+      @keyframes wave-sway {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-2px); }
+      }
+      @keyframes pearl-pulse {
+        0%, 100% { opacity: 0.5; transform: scale(0.9); }
+        50% { opacity: 1; transform: scale(1.25); }
+      }
+      @keyframes beam-drift {
+        0% { stroke-dashoffset: 360; opacity: 0.15; }
+        50% { opacity: 1; }
+        100% { stroke-dashoffset: -360; opacity: 0.15; }
+      }
+      @keyframes bead-twinkle {
+        0%, 100% { opacity: 0.3; transform: scale(0.8); }
+        50% { opacity: 0.95; transform: scale(1.3); }
+      }
+      .div-wave {
+        transform-origin: 450px 18px;
+        animation: wave-sway 4s ease-in-out infinite;
+      }
+      .pearl-aura {
+        transform-origin: 450px 18px;
+        animation: pearl-pulse 3s ease-in-out infinite;
+      }
+      .div-laser {
+        stroke-dasharray: 60 260;
+        animation: beam-drift 4s linear infinite;
+      }
+      .bead-1 { transform-box: fill-box; transform-origin: center; animation: bead-twinkle 2.4s ease-in-out infinite; }
+      .bead-2 { transform-box: fill-box; transform-origin: center; animation: bead-twinkle 2.4s ease-in-out infinite 1.2s; }
+      .bead-3 { transform-box: fill-box; transform-origin: center; animation: bead-twinkle 3s ease-in-out infinite 0.6s; }
+      .bead-4 { transform-box: fill-box; transform-origin: center; animation: bead-twinkle 3s ease-in-out infinite 1.8s; }
+    </style>
+  </defs>
+
+  <!-- Central Radiant Aura -->
+  <circle class="pearl-aura" cx="450" cy="18" r="16" fill="url(#pearl-glow)" />
+
+  <!-- Base Graceful Sine Wave Curve -->
+  <path class="div-wave" d="M 80 18 Q 220 9, 360 18 T 540 18 T 680 27 T 820 18" stroke="url(#ref-wave-grad)" stroke-width="1.6" fill="none" stroke-linecap="round" />
+
+  <!-- Counter Delicate Curve for Depth -->
+  <path d="M 120 18 Q 260 26, 400 18 T 580 18 T 720 10 T 780 18" stroke="url(#ref-wave-grad)" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.45" />
+
+  <!-- Laser Beam Sweeping Across Wave -->
+  <path class="div-laser" d="M 80 18 Q 220 9, 360 18 T 540 18 T 680 27 T 820 18" stroke="url(#ref-laser-grad)" stroke-width="2.2" fill="none" stroke-linecap="round" filter="url(#pearl-blur)" />
+
+  <!-- Satellite Pearl Beads -->
+  <g class="bead-3">
+    <circle cx="310" cy="14" r="2" fill="#38bdf8" />
+  </g>
+  <g class="bead-1">
+    <circle cx="390" cy="18" r="2.5" fill="#53d7d6" filter="url(#pearl-blur)" />
+    <circle cx="390" cy="18" r="1" fill="#ffffff" />
+  </g>
+  <g class="bead-2">
+    <circle cx="510" cy="18" r="2.5" fill="#c084fc" filter="url(#pearl-blur)" />
+    <circle cx="510" cy="18" r="1" fill="#ffffff" />
+  </g>
+  <g class="bead-4">
+    <circle cx="590" cy="22" r="2" fill="#818cf8" />
+  </g>
+
+  <!-- Central Luminous Pearl / Core Beacon -->
+  <g filter="url(#pearl-blur)">
+    <circle cx="450" cy="18" r="4.5" fill="#53d7d6" />
+    <circle cx="450" cy="18" r="2.5" fill="#ffffff" />
+  </g>
+</svg>

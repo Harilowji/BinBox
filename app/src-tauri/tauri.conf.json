@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "BinBox",
+  "version": "0.1.0",
+  "identifier": "com.binbox.workspace",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "BinBox",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 640,
+        "minHeight": 400,
+        "decorations": false,
+        "transparent": true
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUwOERFMEY5RDIyNjBENkUKUldSdURTYlMrZUNOVU5mb0dsZ2ZoUUNBZTdxWW51eDNIMnEvWFVTS3hVb25vQ1c0b0xBeDc3c3AK",
+      "endpoints": [
+        "https://github.com/QuangquyNguyenvo/Tethys/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}
