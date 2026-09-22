@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-22
+
+> High-Performance & Zero-Lag Update for Windows 10/11.
+> Resolves WebView2 transparency lag, DWM Acrylic stuttering, and startup wallpaper stalls.
+
+### Fixed & Optimized — Performance & Smoothness
+- **DirectComposition Hardware Acceleration**: Disabled `transparent: true` in `tauri.conf.json` to allow WebView2 native DirectComposition flip-model swapchains (60-144+ FPS without DWM software composition lag).
+- **Windows 11 Native Mica Support**: Updated `app_window_set_vibrancy` to prioritize GPU-accelerated Mica over laggy undocumented Acrylic Gaussian blur behind the window.
+- **Zero-Stall Instant Startup**: Changed default theme color source to BinBox Brand (`colorSource: "brand"`), eliminating startup main-thread freezing caused by decoding and quantizing 4K desktop wallpapers.
+- **DWM Stability**: Disabled `windowVibrancy` by default on Windows to prevent mouse cursor input lag and frame drops during window moving, resizing, and terminal typing.
+- **Crisp Terminal Visibility**: Enhanced default terminal background opacity to 0.85 for sharp text contrast.
+
 ## [0.1.0] - 2026-09-22
 
 > Transformation to BinBox by Shadow.

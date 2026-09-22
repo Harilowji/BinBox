@@ -258,26 +258,23 @@ export default function App() {
               // giao diện kính; từ đây trở đi người dùng đổi lại Phẳng vẫn được giữ nguyên.
               const savedTheme = saved.theme_opts as Record<string, unknown>;
               const legacyAppearance = savedTheme.appearanceVersion === undefined;
-              // V5 returns the workspace bar to its original auto-hide behavior. The dock
-              // stays available, since its edge trigger is too easy to miss in daily use.
-              const preWorkspaceAutoHide =
+              const prePerformanceV6 =
                 legacyAppearance ||
-                (typeof savedTheme.appearanceVersion === "number" && savedTheme.appearanceVersion < 5);
+                (typeof savedTheme.appearanceVersion === "number" && savedTheme.appearanceVersion < 6);
               setOpts(
-                legacyAppearance
+                prePerformanceV6
                   ? {
                       ...savedTheme,
-                      appearanceVersion: 5,
-                      colorSource: "wallpaper",
+                      appearanceVersion: 6,
+                      colorSource: "brand",
                       surfaceStyle: "glass",
-                      windowVibrancy: true,
+                      windowVibrancy: false,
                       blurEffects: true,
                       dockAutoHide: false,
                       navAutoHide: true,
+                      termOpacity: 0.85,
                     }
-                  : preWorkspaceAutoHide
-                    ? { ...savedTheme, appearanceVersion: 5, dockAutoHide: false, navAutoHide: true }
-                    : savedTheme,
+                  : savedTheme,
               );
             }
           }
