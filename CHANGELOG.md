@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-22
+
+> Fix window collapse/white screen flash and corrupt 0-byte wallpaper handling.
+
+### Fixed
+- Restored `transparent: true` required by Tauri borderless windows to eliminate the white flash and window collapse on Windows.
+- Completely removed `apply_acrylic` from startup setup hook to prevent DWM composition failure and mouse lag.
+- Guarded `wallpaper_path` against 0-byte dummy `TranscodedWallpaper` files in Windows 11.
+
 ## [0.1.1] - 2026-09-22
 
 > High-Performance & Zero-Lag Update for Windows 10/11.

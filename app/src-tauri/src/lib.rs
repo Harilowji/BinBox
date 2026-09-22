@@ -139,10 +139,7 @@ fn app_window_set_vibrancy(window: tauri::Window, enabled: bool) -> Result<(), S
     {
         if enabled {
             // Windows 11: apply_mica is GPU-accelerated and smooth.
-            // Acrylic on Windows causes notorious DWM CPU/GPU lag and mouse cursor stutter.
-            if window_vibrancy::apply_mica(&window, Some(true)).is_err() {
-                let _ = window_vibrancy::apply_acrylic(&window, Some((16, 18, 24, 120)));
-            }
+            let _ = window_vibrancy::apply_mica(&window, Some(true));
         } else {
             let _ = window_vibrancy::clear_acrylic(&window);
             let _ = window_vibrancy::clear_mica(&window);
@@ -272,10 +269,8 @@ pub fn run() {
                 #[cfg(target_os = "windows")]
                 {
                     install_webview_shortcuts(&win);
-                    // Áp dụng Acrylic blur / Mica cho Windows 11/10
-                    if let Err(_) = window_vibrancy::apply_acrylic(&win, Some((16, 18, 24, 120))) {
-                        let _ = window_vibrancy::apply_mica(&win, Some(true));
-                    }
+                    // Do not use laggy Acrylic blur on Windows 11. Use GPU-accelerated Mica:
+                    let _ = window_vibrancy::apply_mica(&win, Some(true));
                 }
             }
             Ok(())
