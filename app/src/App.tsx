@@ -381,7 +381,7 @@ export default function App() {
         e.preventDefault();
         e.stopPropagation();
         if (!WINDOWS_NATIVE_FKEYS) {
-          window.dispatchEvent(new Event("tethys:web-reload"));
+          window.dispatchEvent(new Event("binbox:web-reload"));
         }
         return;
       }

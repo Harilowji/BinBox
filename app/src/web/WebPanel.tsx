@@ -240,12 +240,12 @@ export function WebPanel({ panelKey, url, suppressed = false }: Props) {
     const onFallbackReload = () => {
       if (useSessions.getState().focused === panelKey) reloadCurrent();
     };
-    window.addEventListener("tethys:web-reload", onFallbackReload);
+    window.addEventListener("binbox:web-reload", onFallbackReload);
 
     return () => {
       disposed = true;
       unlisten?.();
-      window.removeEventListener("tethys:web-reload", onFallbackReload);
+      window.removeEventListener("binbox:web-reload", onFallbackReload);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panelKey, nativeReady, nativeLabel]);

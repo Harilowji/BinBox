@@ -115,7 +115,7 @@ export type ThemeOptions = {
   workspaceAltKeys: boolean;
   /** Ảnh nền riêng của app; rỗng nghĩa là dùng wallpaper Desktop hiện tại. */
   wallpaperPath: string;
-  /** Ảnh thay thế logo chữ trong panel sysfetch; rỗng nghĩa là dùng logo TETHYS mặc định. */
+  /** Ảnh thay thế logo chữ trong panel sysfetch; rỗng nghĩa là dùng logo BINBOX mặc định. */
   sysfetchLogoPath: string;
 };
 
