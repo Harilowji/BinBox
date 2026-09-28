@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-09-28
+
+> Eliminate UI thread bottlenecks, deadlock risk on pipe writes, shell initialization delay, and unhandled 0-byte wallpaper fallback.
+
+### Fixed
+- **UI Thread & Non-blocking stdin writer**: Converted PTY stdin writes to a dedicated background OS thread communicating via `mpsc::channel`. `pty_write` returns immediately without blocking Tauri IPC or holding the `PtyManager.sessions` Mutex during pipe I/O.
+- **Non-blocking Child Process Cleanup**: Moved `child.wait()` in `PtySession::drop` into an asynchronous background task so terminating sessions never blocks UI or Tauri command threads.
+- **I/O Pipe Backpressure & Deadlock Elimination**: Increased `MAX_IN_FLIGHT` to 64 chunks, reduced `ACK_TIMEOUT` to 250ms, and bypassed backpressure for keystrokes/echo packets under 512 bytes so interactive typing never stalls.
+- **Shell Startup Optimization**: Appended `-NoProfile` to PowerShell commands (`-NoLogo -NoProfile -NoExit -Command`) to prevent slow or hanging profile scripts from delaying terminal launch. Added `--norc --noprofile` for Bash, `--no-rcs` for Zsh, and `/Q` for CMD.
+- **Solid-Color Desktop Graceful Fallback**: Protected `transcoded()` and `useTheme.ts` against 0-byte Windows `TranscodedWallpaper` files, falling back to brand palette without raising user-facing warning notices.
+
 ## [0.1.3] - 2026-09-28
 
 > Fix window freezing, unresponsiveness, and terminal command input according to Tethys architectural pattern.

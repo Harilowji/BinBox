@@ -107,13 +107,33 @@ async function seedFromWallpaper(customPath?: string): Promise<{
   path: string;
   blur: string;
 }> {
-  const path = customPath || await invoke<string>("wallpaper_path");
+  let path: string;
+  try {
+    path = customPath || await invoke<string>("wallpaper_path");
+    if (!path) throw new Error("Empty wallpaper path");
+  } catch {
+    return {
+      seed: FALLBACK_SEED,
+      colors: [],
+      path: "",
+      blur: "",
+    };
+  }
   const img = new Image();
   // asset: protocol phục vụ từ origin khác nên canvas bị taint và `getImageData` ném lỗi.
   // Phải xin CORS tường minh thì mới đọc được pixel.
   img.crossOrigin = "anonymous";
   img.src = convertFileSrc(path);
-  await img.decode();
+  try {
+    await img.decode();
+  } catch {
+    return {
+      seed: FALLBACK_SEED,
+      colors: [],
+      path: "",
+      blur: "",
+    };
+  }
 
   const scale = SAMPLE_EDGE / Math.max(img.naturalWidth, img.naturalHeight);
   const w = Math.max(1, Math.round(img.naturalWidth * scale));

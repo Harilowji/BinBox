@@ -15,7 +15,8 @@ fn transcoded() -> Option<PathBuf> {
         .join("Windows")
         .join("Themes")
         .join("TranscodedWallpaper");
-    p.is_file().then_some(p)
+    let is_valid = p.is_file() && std::fs::metadata(&p).map(|m| m.len() > 512).unwrap_or(false);
+    is_valid.then_some(p)
 }
 
 #[cfg(target_os = "windows")]

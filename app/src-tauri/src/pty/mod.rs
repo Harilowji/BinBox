@@ -38,7 +38,9 @@ impl PtyManager {
     }
 
     pub fn write(&self, id: SessionId, data: &[u8]) -> Result<()> {
-        self.with(id, |s| s.write(data))
+        let map = self.sessions.lock().unwrap();
+        let s = map.get(&id).ok_or_else(|| anyhow!("session {id} does not exist"))?;
+        s.write(data)
     }
 
     pub fn resize(&self, id: SessionId, rows: u16, cols: u16) -> Result<()> {

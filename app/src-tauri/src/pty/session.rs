@@ -9,13 +9,11 @@ use tauri::ipc::{Channel, InvokeResponseBody};
 pub type SessionId = u32;
 
 /// Số chunk tối đa được phép "đang bay" giữa Rust và xterm.js.
-/// Spike không có giới hạn này và RAM đỉnh lên 713–754 MB khi đổ 47,7 MB
-/// (sau 25 s vẫn 632 MB) — xem `phase-01-spike.md`.
-const MAX_IN_FLIGHT: usize = 16;
+/// Tăng lên 64 để hỗ trợ lượng stream lớn mượt mà không gây nghẽn UI, nhưng vẫn chặn phình RAM.
+const MAX_IN_FLIGHT: usize = 64;
 
-/// Frontend reload hoặc chết giữa chừng thì không ai ack nữa.
-/// Hết hạn chờ thì cứ gửi tiếp — thà phình RAM còn hơn treo cứng terminal.
-const ACK_TIMEOUT: Duration = Duration::from_secs(2);
+/// Hạn chờ ACK giảm xuống 250ms để không bao giờ treo khựng terminal nếu frontend trễ ACK.
+const ACK_TIMEOUT: Duration = Duration::from_millis(250);
 
 const READ_BUF: usize = 1 << 16;
 
@@ -32,7 +30,11 @@ impl Flow {
         Flow { n: Mutex::new(0), cv: Condvar::new() }
     }
 
-    fn acquire(&self) {
+    fn acquire(&self, chunk_len: usize) {
+        // Các chunk nhỏ như phím gõ / prompt echo (< 512 bytes) không bao giờ bị nghẽn backpressure
+        if chunk_len < 512 {
+            return;
+        }
         let mut n = self.n.lock().unwrap();
         while *n >= MAX_IN_FLIGHT {
             let (guard, timeout) = self.cv.wait_timeout(n, ACK_TIMEOUT).unwrap();
@@ -53,8 +55,8 @@ impl Flow {
 
 pub struct PtySession {
     master: Box<dyn MasterPty + Send>,
-    writer: Box<dyn Write + Send>,
-    child: Box<dyn Child + Send + Sync>,
+    tx_write: std::sync::mpsc::Sender<Vec<u8>>,
+    child: Arc<Mutex<Option<Box<dyn Child + Send + Sync>>>>,
     flow: Arc<Flow>,
     alive: Arc<AtomicBool>,
 }
@@ -119,10 +121,14 @@ impl PtySession {
             script.push_str(
                 r#"; if (-not $PSStyle) { function global:Show-ColorDir { $items = Get-ChildItem @args; $isTerminal = $MyInvocation.PipelinePosition -ge $MyInvocation.PipelineLength; if (-not $isTerminal) { return $items }; $e = [char]27; foreach ($i in $items) { $n = $i.Name; if ($i.PSIsContainer) { Write-Host "$e[1;34m$n$e[0m" } elseif ($i.Extension -match '\.(exe|bat|cmd|ps1|psm1)$') { Write-Host "$e[1;32m$n$e[0m" } elseif ($i.Extension -match '\.(zip|7z|rar|gz|tar)$') { Write-Host "$e[1;31m$n$e[0m" } else { Write-Host $n } } }; Set-Alias -Name ls -Value Show-ColorDir -Scope Global -Option AllScope -Force; Set-Alias -Name dir -Value Show-ColorDir -Scope Global -Option AllScope -Force }"#,
             );
-            // `NONAME_BOOT_CMD` được `pty_spawn` gửi sau khi frontend đã đăng ký Channel.
-            // Không chạy ở đây: chạy cả hai đường sẽ nhân đôi workload benchmark và có thể
-            // xả output trước khi xterm kịp ack, làm số throughput không còn đáng tin.
-            cmd.args(["-NoLogo", "-NoExit", "-Command", &script]);
+            // Thêm -NoProfile để tránh nạp các script cá nhân/chậm/treo từ profile người dùng.
+            cmd.args(["-NoLogo", "-NoProfile", "-NoExit", "-Command", &script]);
+        } else if shell.contains("bash") {
+            cmd.args(["--norc", "--noprofile"]);
+        } else if shell.contains("zsh") {
+            cmd.args(["--no-rcs", "--no-globalrcs"]);
+        } else if shell.contains("cmd.exe") {
+            cmd.args(["/Q"]);
         }
         match cwd {
             Some(d) => cmd.cwd(d),
@@ -139,11 +145,27 @@ impl PtySession {
         drop(pair.slave);
 
         let mut reader = pair.master.try_clone_reader().map_err(|e| anyhow!("reader: {e}"))?;
-        let writer = pair.master.take_writer().map_err(|e| anyhow!("writer: {e}"))?;
+        let mut writer = pair.master.take_writer().map_err(|e| anyhow!("writer: {e}"))?;
 
         let flow = Arc::new(Flow::new());
         let alive = Arc::new(AtomicBool::new(true));
         let buf = Arc::new(Mutex::new(Vec::<u8>::with_capacity(READ_BUF)));
+
+        // ── Luồng ghi stdin bất đồng bộ (Dedicated Background Writer Thread) ───
+        // Tránh deadlock và không chặn luồng UI / IPC: dữ liệu ghi từ frontend được
+        // đẩy vào mpsc channel và ghi tuần tự vào ConPTY pipe ở background.
+        let (tx_write, rx_write) = std::sync::mpsc::channel::<Vec<u8>>();
+        let write_alive = alive.clone();
+        std::thread::spawn(move || {
+            while let Ok(data) = rx_write.recv() {
+                if !write_alive.load(Ordering::Relaxed) {
+                    break;
+                }
+                if writer.write_all(&data).is_err() || writer.flush().is_err() {
+                    break;
+                }
+            }
+        });
 
         // ── thread đọc ───────────────────────────────────────────────────────
         // Chỉ gom. Ngưỡng gom đặt trên 16 KB mới có tác dụng: ConPTY trả dữ liệu
@@ -169,7 +191,7 @@ impl PtySession {
                                 }
                             };
                             if let Some(out) = out {
-                                flow.acquire();
+                                flow.acquire(out.len());
                                 if ch.send(InvokeResponseBody::Raw(out)).is_err() {
                                     break;
                                 }
@@ -201,7 +223,7 @@ impl PtySession {
                         }
                     };
                     if let Some(out) = out {
-                        flow.acquire();
+                        flow.acquire(out.len());
                         if ch.send(InvokeResponseBody::Raw(out)).is_err() {
                             break;
                         }
@@ -210,13 +232,13 @@ impl PtySession {
             });
         }
 
-        Ok(PtySession { master: pair.master, writer, child, flow, alive })
+        let child = Arc::new(Mutex::new(Some(child)));
+        Ok(PtySession { master: pair.master, tx_write, child, flow, alive })
     }
 
-    pub fn write(&mut self, data: &[u8]) -> Result<()> {
-        self.writer.write_all(data)?;
-        self.writer.flush()?;
-        Ok(())
+    /// Gửi dữ liệu tới stdin của tiến trình con thông qua kênh không chặn (non-blocking).
+    pub fn write(&self, data: &[u8]) -> Result<()> {
+        self.tx_write.send(data.to_vec()).map_err(|e| anyhow!("{e}"))
     }
 
     pub fn resize(&self, rows: u16, cols: u16) -> Result<()> {
@@ -238,9 +260,17 @@ impl PtySession {
 
 impl Drop for PtySession {
     /// Không có cái này thì đóng panel sẽ để lại `pwsh.exe` mồ côi (tiêu chí B4).
+    /// Đưa việc chờ child process sang background thread để không bao giờ chặn UI/IPC thread.
     fn drop(&mut self) {
         self.alive.store(false, Ordering::Relaxed);
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        let child_arc = self.child.clone();
+        std::thread::spawn(move || {
+            if let Ok(mut lock) = child_arc.lock() {
+                if let Some(mut child) = lock.take() {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                }
+            }
+        });
     }
 }
