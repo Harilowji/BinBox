@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-28
+
+> Fix window freezing, unresponsiveness, and terminal command input according to Tethys architectural pattern.
+
+### Fixed
+- Restored `apply_acrylic` with graceful `apply_mica` fallback in `lib.rs` (`app_window_set_vibrancy` and setup hook) matching Tethys model.
+- Restored `body { background: transparent; }` in `App.css` to prevent composition conflicts between opaque DOM and transparent Tauri window.
+- Restored default theme options (`colorSource: "wallpaper"`, `windowVibrancy: true`, `termOpacity: 0.6`) in `palette.ts` and automated migration in `App.tsx` (version 7).
+- Restored `wallpaper.rs` path resolution matching Tethys standard.
+- Synchronized `panelKeyRef` in `usePty.ts` ensuring command execution and keyboard input routing never stall.
+
 ## [0.1.2] - 2026-09-22
 
 > Fix window collapse/white screen flash and corrupt 0-byte wallpaper handling.

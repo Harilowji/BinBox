@@ -71,6 +71,8 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
   /** Thư mục shell đang đứng, theo OSC 7. Đổi theo mỗi lần `cd`. */
   const [cwd, setCwd] = useState<string | undefined>(opts.cwd);
   const cwdRef = useRef<string | undefined>(opts.cwd);
+  const panelKeyRef = useRef(opts.panelKey);
+  panelKeyRef.current = opts.panelKey;
   const panelVisibleRef = useRef(opts.panelVisible !== false);
   const flushRef = useRef<() => void>(() => {});
   const termRef = useRef<Terminal | null>(null);
@@ -387,7 +389,7 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
     const onRunCommand = (e: Event) => {
       const custom = e as CustomEvent<{ cmd: string; panelKey?: string }>;
       if (!custom.detail?.cmd) return;
-      if (custom.detail.panelKey && custom.detail.panelKey !== opts.panelKey) return;
+      if (custom.detail.panelKey && custom.detail.panelKey !== panelKeyRef.current) return;
       if (!custom.detail.panelKey && !panelVisibleRef.current) return;
       const cmdBytes = new TextEncoder().encode(custom.detail.cmd + "\r\n");
       for (let i = 0; i < cmdBytes.length; i++) pendingIn.push(cmdBytes[i]);

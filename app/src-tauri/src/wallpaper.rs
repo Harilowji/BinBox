@@ -15,14 +15,7 @@ fn transcoded() -> Option<PathBuf> {
         .join("Windows")
         .join("Themes")
         .join("TranscodedWallpaper");
-    if p.is_file() {
-        if let Ok(meta) = p.metadata() {
-            if meta.len() > 100 {
-                return Some(p);
-            }
-        }
-    }
-    None
+    p.is_file().then_some(p)
 }
 
 #[cfg(target_os = "windows")]
@@ -38,14 +31,7 @@ fn from_registry() -> Option<PathBuf> {
         return None;
     }
     let p = PathBuf::from(raw);
-    if p.is_file() {
-        if let Ok(meta) = p.metadata() {
-            if meta.len() > 100 {
-                return Some(p);
-            }
-        }
-    }
-    None
+    p.is_file().then_some(p)
 }
 
 #[cfg(not(target_os = "windows"))]

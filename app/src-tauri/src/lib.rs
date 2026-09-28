@@ -138,8 +138,9 @@ fn app_window_set_vibrancy(window: tauri::Window, enabled: bool) -> Result<(), S
     #[cfg(target_os = "windows")]
     {
         if enabled {
-            // Windows 11: apply_mica is GPU-accelerated and smooth.
-            let _ = window_vibrancy::apply_mica(&window, Some(true));
+            if window_vibrancy::apply_acrylic(&window, Some((16, 18, 24, 120))).is_err() {
+                window_vibrancy::apply_mica(&window, Some(true)).map_err(|e| e.to_string())?;
+            }
         } else {
             let _ = window_vibrancy::clear_acrylic(&window);
             let _ = window_vibrancy::clear_mica(&window);
@@ -269,8 +270,10 @@ pub fn run() {
                 #[cfg(target_os = "windows")]
                 {
                     install_webview_shortcuts(&win);
-                    // Do not use laggy Acrylic blur on Windows 11. Use GPU-accelerated Mica:
-                    let _ = window_vibrancy::apply_mica(&win, Some(true));
+                    // Áp dụng Acrylic blur / Mica cho Windows 11/10
+                    if let Err(_) = window_vibrancy::apply_acrylic(&win, Some((16, 18, 24, 120))) {
+                        let _ = window_vibrancy::apply_mica(&win, Some(true));
+                    }
                 }
             }
             Ok(())

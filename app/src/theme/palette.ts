@@ -121,21 +121,30 @@ export type ThemeOptions = {
 
 /** Mặc định lấy từ `ui-demo/index.html`, nơi các con số này được kéo thử bằng tay. */
 export const DEFAULTS: ThemeOptions = {
-  appearanceVersion: 6,
-  // High-performance default: instant brand palette startup without disk wallpaper bottleneck
-  colorSource: "brand",
+  appearanceVersion: 7,
+  // Workspace nên mở đúng bản chất của nó: lấy wallpaper Windows, nền kính và terminal
+  // trong mờ. Chế độ thương hiệu/phẳng vẫn là lựa chọn trong Cài đặt, không phải trạng
+  // thái khởi động làm người dùng tưởng hiệu ứng đã bị gỡ.
+  colorSource: "wallpaper",
   surfaceStyle: "glass",
   scheme: "TonalSpot",
   dark: true,
   contrast: 0,
   termChroma: 1.7,
+  // 0,06 chứ không phải 0,18. `harmonizeHue` kéo theo *đường ngắn nhất* trên vòng hue, nên
+  // độ lệch tỉ lệ với khoảng cách tới màu gốc — và màu gốc brand là teal (hue 196), gần như
+  // đối diện đỏ (hue 25). Ở 0,18 thì đỏ bị đẩy 31° thành cam: `git diff` mất dòng xoá, log
+  // lỗi mất màu lỗi. Terminal có 16 màu ANSI là vì *nghĩa* của chúng, hoà sắc không được
+  // phép ăn vào nghĩa. 0,06 đủ để cả dãy ấm lên theo UI mà đỏ vẫn ra đỏ.
   harmonize: 0.06,
-  termOpacity: 0.85,
+  // 0,6 chứ không phải 0,85. Nền terminal là `surfaceContainerLowest` — trong theme tối nó
+  // gần như đen (đo được: luma 13,9). Ở 85% thì 15% ảnh nền lọt qua chỉ nâng luma lên ~17,
+  // tức là *có* trong suốt nhưng không ai nhìn ra. 0,6 mới thấy được ảnh nền.
+  termOpacity: 0.6,
   terminalScrollback: 5000,
   dockAutoHide: true,
   navAutoHide: true,
-  // Disabled by default on Windows to prevent Acrylic DWM frame-rate drops / mouse lag
-  windowVibrancy: false,
+  windowVibrancy: true,
   blurEffects: true,
   layoutMode: "spiral",
   tabShortcuts: true,
