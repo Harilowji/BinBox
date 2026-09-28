@@ -258,20 +258,20 @@ export default function App() {
               // giao diện kính; từ đây trở đi người dùng đổi lại Phẳng vẫn được giữ nguyên.
               const savedTheme = saved.theme_opts as Record<string, unknown>;
               const legacyAppearance = savedTheme.appearanceVersion === undefined;
-              const preV7 =
+              const preV8 =
                 legacyAppearance ||
-                (typeof savedTheme.appearanceVersion === "number" && savedTheme.appearanceVersion < 7);
+                (typeof savedTheme.appearanceVersion === "number" && savedTheme.appearanceVersion < 8);
               setOpts(
-                preV7
+                preV8
                   ? {
                       ...savedTheme,
-                      appearanceVersion: 7,
+                      appearanceVersion: 8,
                       colorSource: "wallpaper",
                       surfaceStyle: "glass",
                       windowVibrancy: true,
                       blurEffects: true,
-                      dockAutoHide: true,
-                      navAutoHide: true,
+                      dockAutoHide: false,
+                      navAutoHide: false,
                       termOpacity: 0.6,
                     }
                   : savedTheme,

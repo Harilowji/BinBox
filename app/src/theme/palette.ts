@@ -121,7 +121,7 @@ export type ThemeOptions = {
 
 /** Mặc định lấy từ `ui-demo/index.html`, nơi các con số này được kéo thử bằng tay. */
 export const DEFAULTS: ThemeOptions = {
-  appearanceVersion: 7,
+  appearanceVersion: 8,
   // Workspace nên mở đúng bản chất của nó: lấy wallpaper Windows, nền kính và terminal
   // trong mờ. Chế độ thương hiệu/phẳng vẫn là lựa chọn trong Cài đặt, không phải trạng
   // thái khởi động làm người dùng tưởng hiệu ứng đã bị gỡ.
@@ -142,8 +142,8 @@ export const DEFAULTS: ThemeOptions = {
   // tức là *có* trong suốt nhưng không ai nhìn ra. 0,6 mới thấy được ảnh nền.
   termOpacity: 0.6,
   terminalScrollback: 5000,
-  dockAutoHide: true,
-  navAutoHide: true,
+  dockAutoHide: false,
+  navAutoHide: false,
   windowVibrancy: true,
   blurEffects: true,
   layoutMode: "spiral",

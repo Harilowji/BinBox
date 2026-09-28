@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-09-28
+
+> Permanent Dock and Workspace titlebar visibility by default, restoring direct access to all Tethys panels and BinBox AI Assistant.
+
+### Fixed
+- **Permanent Dock and Titlebar Visibility**: Disabled `dockAutoHide` and `navAutoHide` by default (appearanceVersion 8), keeping the bottom dock and top workspace navigation permanently accessible with 1-click access to Terminal, Files, Web, System Monitor, and AI Agent.
+
 ## [0.1.4] - 2026-09-28
 
 > Eliminate UI thread bottlenecks, deadlock risk on pipe writes, shell initialization delay, and unhandled 0-byte wallpaper fallback.
