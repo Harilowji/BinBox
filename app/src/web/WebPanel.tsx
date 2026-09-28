@@ -441,7 +441,7 @@ export function WebPanel({ panelKey, url, suppressed = false }: Props) {
           <div className="web-recovery" role="status">
             <strong>Paused the native view to save memory.</strong>
             <span>
-              Tethys keeps at most {MAX_NATIVE_SURFACES} native browser views open at once.
+              BinBox keeps at most {MAX_NATIVE_SURFACES} native browser views open at once.
             </span>
             <div>
               <button onClick={resumeNative}>Resume native view</button>

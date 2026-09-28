@@ -256,7 +256,7 @@ export function NativeBrowserSurface({
         const nextWindow = new WebviewWindow(label, {
           url: urlRef.current,
           parent: mainWindow,
-          title: "Tethys Browser",
+          title: "BinBox Browser",
           width: 1,
           height: 1,
           x: 0,

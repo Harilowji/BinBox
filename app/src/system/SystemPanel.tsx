@@ -217,7 +217,7 @@ export function SystemPanel({ panelKey, visible = true }: { panelKey: string; vi
     if (density !== "compact") {
       push("Kernel", info.kernel);
       push("Shell", info.shell);
-      push("Terminal", "Tethys");
+      push("Terminal", "BinBox");
       push("GPU", info.gpu);
     }
   }
