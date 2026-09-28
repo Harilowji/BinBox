@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../ui/Icon";
-import { useThemeStore, refreshSeed, setCustomWallpaper, useDesktopWallpaper } from "../theme/useTheme";
+import { useThemeStore, refreshSeed } from "../theme/useTheme";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { check as checkForUpdate, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { useBackgroundStore, type WeWallpaperInfo } from "../store/settings";
 import {
   TERM_OPACITY_MAX,
   TERM_OPACITY_MIN,
@@ -68,6 +69,18 @@ export function SettingsModal({ onClose }: Props) {
   const setOpts = useThemeStore((s) => s.setOpts);
   const source = useThemeStore((s) => s.source);
   const wallpaper = useThemeStore((s) => s.wallpaper);
+  const bgSettings = useBackgroundStore((s) => s.background);
+  const setBgMode = useBackgroundStore((s) => s.setMode);
+  const setCustomImage = useBackgroundStore((s) => s.setCustomImage);
+  const setDimOpacity = useBackgroundStore((s) => s.setDimOpacity);
+  const setBlurRadius = useBackgroundStore((s) => s.setBlurRadius);
+  const setWeSyncColors = useBackgroundStore((s) => s.setWeSyncColors);
+  const weInfo = useBackgroundStore((s) => s.weInfo);
+  const weConnected = useBackgroundStore((s) => s.weConnected);
+  const weError = useBackgroundStore((s) => s.weError);
+  const setWeInfo = useBackgroundStore((s) => s.setWeInfo);
+  const setWeConnected = useBackgroundStore((s) => s.setWeConnected);
+  const setWeError = useBackgroundStore((s) => s.setWeError);
   const [page, setPage] = useState<Page>("appearance");
   const [logoMissing, setLogoMissing] = useState(false);
   const [appVersion, setAppVersion] = useState("");
@@ -308,33 +321,134 @@ export function SettingsModal({ onClose }: Props) {
                   </div>
                 </Group>
 
-                <Group label="Wallpaper">
-                  <ActionRow
-                    icon={<Icon name="wallpaper" size={22} />}
-                    label="Workspace wallpaper"
-                    note={wallpaper ? wallpaper : "Using your desktop wallpaper."}
-                    action="Choose image"
-                    onClick={() => {
-                      invoke<string | null>("wallpaper_pick")
-                        .then((path) => {
-                          if (path) {
-                            setOpts({ surfaceStyle: "glass", colorSource: "wallpaper" });
-                            void setCustomWallpaper(path);
-                          }
-                        })
-                        .catch(() => {});
-                    }}
-                  />
-                  <ActionRow
-                    icon={<Icon name="undo" size={22} />}
-                    label="Use desktop wallpaper"
-                    note="Back to the Windows wallpaper."
-                    action="Restore"
-                    onClick={() => {
-                      setOpts({ surfaceStyle: "glass", colorSource: "wallpaper" });
-                      void useDesktopWallpaper();
-                    }}
-                  />
+                <Group label="Background (Quản lý nền hợp nhất)">
+                  {/* Segmented Control cho 3 chế độ: Solid | Ảnh cá nhân | Wallpaper Engine */}
+                  <div className="set-grid cols-3">
+                    <OptionCard
+                      icon="square"
+                      label="Solid (Mặc định)"
+                      hint="Nền đen thương hiệu tối giản, 0.0% GPU"
+                      active={bgSettings.mode === "solid"}
+                      onClick={() => setBgMode("solid")}
+                    />
+                    <OptionCard
+                      icon="wallpaper"
+                      label="Ảnh cá nhân"
+                      hint="Chọn ảnh tĩnh từ máy tính (.png, .jpg, .webp)"
+                      active={bgSettings.mode === "custom_image"}
+                      onClick={() => setBgMode("custom_image")}
+                    />
+                    <OptionCard
+                      icon="refresh"
+                      label="Wallpaper Engine"
+                      hint="Tự động đồng bộ với Wallpaper Engine đang chạy"
+                      active={bgSettings.mode === "wallpaper_engine"}
+                      onClick={() => setBgMode("wallpaper_engine")}
+                    />
+                  </div>
+
+                  {/* Khi chọn 'custom_image' */}
+                  {bgSettings.mode === "custom_image" && (
+                    <>
+                      <ActionRow
+                        icon={<Icon name="add_photo_alternate" size={22} />}
+                        label="Ảnh nền tùy chọn"
+                        note={bgSettings.customImagePath ? fileName(bgSettings.customImagePath) : "Chưa chọn file ảnh nào."}
+                        action={bgSettings.customImagePath ? "Đổi ảnh" : "Chọn ảnh"}
+                        onClick={() => {
+                          invoke<string | null>("wallpaper_pick")
+                            .then((path) => {
+                              if (path) {
+                                setCustomImage(path);
+                              }
+                            })
+                            .catch(() => {});
+                        }}
+                      />
+                      {bgSettings.customImagePath && (
+                        <ActionRow
+                          icon={<Icon name="undo" size={22} />}
+                          label="Xóa ảnh tùy chọn"
+                          note="Quay về nền mặc định"
+                          action="Xóa"
+                          onClick={() => setCustomImage(null)}
+                        />
+                      )}
+                    </>
+                  )}
+
+                  {/* Khi chọn 'wallpaper_engine' */}
+                  {bgSettings.mode === "wallpaper_engine" && (
+                    <>
+                      <div className="set-status" title={weInfo?.media_path || undefined}>
+                        <span className={weConnected ? "source-dot live" : "source-dot"} />
+                        {weConnected
+                          ? `Đã kết nối: ${weInfo?.title || (weInfo?.media_path ? fileName(weInfo.media_path) : "Wallpaper Engine")} (${weInfo?.wallpaper_type || "WE"})`
+                          : weError
+                            ? `Chưa kết nối: ${weError}`
+                            : "Đang tìm kiếm Wallpaper Engine trên máy..."}
+                      </div>
+
+                      <div className="set-grid cols-1">
+                        <OptionCard
+                          icon="palette"
+                          label="Đồng bộ bảng màu HCT theo Wallpaper"
+                          hint="Tự động trích xuất bảng màu Material 3 khi wallpaper thay đổi"
+                          active={bgSettings.weSyncColors}
+                          onClick={() => setWeSyncColors(!bgSettings.weSyncColors)}
+                        />
+                      </div>
+
+                      <ActionRow
+                        icon={<Icon name="refresh" size={22} />}
+                        label="Quét lại kết nối"
+                        note="Kiểm tra lại wallpaper đang kích hoạt trong Wallpaper Engine"
+                        action="Quét lại"
+                        onClick={() => {
+                          invoke<WeWallpaperInfo | null>("we_get_current")
+                            .then((info) => {
+                              if (info) {
+                                setWeInfo(info);
+                                setWeConnected(true);
+                              }
+                            })
+                            .catch((err) => {
+                              setWeError(String(err));
+                            });
+                        }}
+                      />
+                    </>
+                  )}
+
+                  {/* Hai thanh trượt Slider: Độ tối lớp phủ (Dim) và Độ mờ hậu cảnh (Blur) */}
+                  {bgSettings.mode !== "solid" && (
+                    <>
+                      <Slider
+                        id="bg-dim-opacity"
+                        icon={<Icon name="opacity" size={22} />}
+                        label="Độ tối lớp phủ (Dim)"
+                        note="Lớp phủ tối giúp nổi bật văn bản terminal"
+                        min={0}
+                        max={0.9}
+                        step={0.05}
+                        value={bgSettings.dimOpacity}
+                        display={`${Math.round(bgSettings.dimOpacity * 100)}%`}
+                        onChange={setDimOpacity}
+                      />
+                      <Slider
+                        id="bg-blur-radius"
+                        icon={<Icon name="blur_on" size={22} />}
+                        label="Độ mờ hậu cảnh (Blur)"
+                        note="Làm mờ hậu cảnh để tăng độ tập trung"
+                        min={0}
+                        max={20}
+                        step={1}
+                        value={bgSettings.blurRadius}
+                        display={`${bgSettings.blurRadius}px`}
+                        onChange={setBlurRadius}
+                      />
+                    </>
+                  )}
                 </Group>
 
                 <Group label="Sysfetch logo">

@@ -109,6 +109,36 @@ body {
   background: var(--ui-background);
 }
 
+.app.has-unified-bg {
+  background: transparent !important;
+}
+
+/* Unified Background Layer (Solid, Custom Image, Wallpaper Engine Sync) */
+.unified-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.unified-bg-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.unified-bg-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: background-color 0.15s ease;
+}
+
 /* Ảnh nền để gần như nguyên bản: panel đã đục nên không cần làm mờ để đọc được chữ,
    mà bỏ blur toàn màn hình cũng chính là bỏ khoản GPU đắt nhất (§7.7 điểm 3). */
 .app-wallpaper-bg {
@@ -1323,6 +1353,7 @@ body.dragging-panel .iconbtn.move-handle { cursor: grabbing; }
 /* Lưới thẻ — trục chính của "nhìn hiểu nhanh hơn đọc". Icon lớn nằm trên, nhãn một dòng
    nằm dưới: ở lưới 2–3 cột thì hình khối phân biệt được từ xa, dòng chữ thì không. */
 .set-grid { display: grid; gap: 10px; }
+.set-grid.cols-1 { grid-template-columns: minmax(0, 1fr); }
 .set-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .set-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 

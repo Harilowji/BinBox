@@ -5,6 +5,7 @@ mod pty;
 mod storage;
 mod system;
 mod wallpaper;
+mod wallpaper_engine;
 mod watcher;
 mod window_cmd;
 
@@ -261,6 +262,7 @@ pub fn run() {
         .manage(PtyManager::default())
         .manage(WatcherManager::default())
         .manage(browser::BrowserRegistry::default())
+        .manage(wallpaper_engine::WeManager::default())
         .setup(|app| {
             #[cfg(desktop)]
             {
@@ -351,7 +353,9 @@ pub fn run() {
             window_cmd::app_window_close,
             window_cmd::app_window_set_fullscreen,
             window_cmd::app_window_system_menu,
-            app_window_set_vibrancy
+            app_window_set_vibrancy,
+            wallpaper_engine::we_set_active,
+            wallpaper_engine::we_get_current
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

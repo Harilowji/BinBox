@@ -13,6 +13,8 @@ pub struct AppSavedState {
     pub workspaces: Option<serde_json::Value>,
     #[serde(default)]
     pub active_workspace_id: Option<String>,
+    #[serde(default)]
+    pub background_settings: Option<serde_json::Value>,
 }
 
 fn get_state_file(app: &AppHandle) -> Result<PathBuf, String> {

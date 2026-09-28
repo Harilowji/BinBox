@@ -13,6 +13,8 @@ import { Titlebar } from "./titlebar/Titlebar";
 import { Dock, type DockItem } from "./dock/Dock";
 import { Folder, Globe, MonitorCog, Settings, Sparkles, Terminal } from "lucide-react";
 import { setSurfaceBlocker } from "./web/surfaceVisibility";
+import { BackgroundLayer } from "./components/BackgroundLayer";
+import { useBackgroundStore } from "./store/settings";
 
 // Popup phụ trợ, không phải màn hình mặc định — nạp khi cần giống mọi panel khác trong Tiles.
 const SettingsModal = lazy(() => import("./settings/SettingsModal").then(({ SettingsModal }) => ({ default: SettingsModal })));
@@ -46,6 +48,7 @@ export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const backgroundSettings = useBackgroundStore((s) => s.background);
   const [navKeyboardReveal, setNavKeyboardReveal] = useState(false);
   const fullscreenState = useRef(false);
   const fullscreenTogglePending = useRef(false);
@@ -238,9 +241,13 @@ export default function App() {
         theme_opts?: any;
         workspaces?: any;
         active_workspace_id?: string;
+        background_settings?: any;
       } | null>("storage_load_state")
         .then((saved) => {
           if (saved) {
+            if (saved.background_settings) {
+              useBackgroundStore.getState().restoreBackground(saved.background_settings);
+            }
             if (saved.workspaces && saved.workspaces.length > 0) {
               restore(
                 saved.layout ?? null,
@@ -303,12 +310,13 @@ export default function App() {
           theme_opts: opts,
           workspaces,
           active_workspace_id: activeWorkspaceId,
+          background_settings: backgroundSettings,
         },
       }).catch(() => {});
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [hydrated, tree, panels, focused, opts, workspaces, activeWorkspaceId]);
+  }, [hydrated, tree, panels, focused, opts, workspaces, activeWorkspaceId, backgroundSettings]);
 
   // Kéo thả file từ bên ngoài vào cửa sổ -> mở Preview
   useEffect(() => {
@@ -903,14 +911,17 @@ export default function App() {
         (opts.blurEffects === false ? " effects-off" : "") +
         // Bề mặt phẳng là một lớp override cuối `App.css`, không phải một bộ CSS thứ hai:
         // nó chỉ tắt blur, bóng và độ trong, còn hình khối vẫn của bản gốc.
-        (opts.surfaceStyle === "flat" ? " surface-flat" : "")
+        (opts.surfaceStyle === "flat" ? " surface-flat" : "") +
+        (backgroundSettings.mode !== "solid" ? " has-unified-bg" : "")
       }
       data-tauri-drag-region
       onMouseDown={handleAppMouseDown}
     >
+      <BackgroundLayer />
+
       {/* Bề mặt phẳng thì không có gì nằm sau panel để mà nhìn xuyên — vẽ ảnh nền lúc đó
           chỉ là bắt GPU tô một tấm 4K rồi che kín nó lại. */}
-      {wallpaper && opts.surfaceStyle !== "flat" && (
+      {wallpaper && opts.surfaceStyle !== "flat" && backgroundSettings.mode === "solid" && (
         <div
           className="app-wallpaper-bg"
           data-tauri-drag-region
