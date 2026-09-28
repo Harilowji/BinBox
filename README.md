@@ -1,9 +1,8 @@
-<img src="assets/headers/header.svg" alt="BinBox Wave Header" width="100%" />
-
 <div align="center">
+  <img src="assets/brand/binbox-studio-banner.png" alt="BinBox Studio" width="480" />
   <br />
   
-  # 📦 BinBox 🚀
+  # 📦 BinBox Studio 🚀
 
   **A dedicated Linux-style tiling workspace on Windows, built for modern developers and AI agents.**
 
@@ -15,7 +14,7 @@
   <br />
 
   <a href="#-download--installation">
-    <img src="https://img.shields.io/badge/⚡_Download_BinBox_for_Windows-2563eb?style=for-the-badge&logo=windows11&logoColor=white" height="38" alt="Download BinBox for Windows" />
+    <img src="https://img.shields.io/badge/⚡_Download_BinBox_Studio_for_Windows-2563eb?style=for-the-badge&logo=windows11&logoColor=white" height="38" alt="Download BinBox Studio for Windows" />
   </a>
   <a href="https://github.com/Harilowji/BinBox/releases">
     <img src="https://img.shields.io/badge/📦_All_Releases-475569?style=for-the-badge&logo=github&logoColor=white" height="38" alt="All Releases" />
@@ -26,7 +25,7 @@
 
 <div align="center">
   <a href="assets/demo/tethys-demo.mp4">
-    <img src="assets/demo/tethys-demo.webp" alt="BinBox workspace demo" width="100%" />
+    <img src="assets/demo/tethys-demo.webp" alt="BinBox Studio workspace demo" width="100%" />
   </a>
 </div>
 
@@ -36,12 +35,12 @@
 
 ## 📥 Download & Installation
 
-BinBox is available as a standalone desktop application for Windows 10 and Windows 11 (64-bit).
+BinBox Studio is available as a standalone desktop application for Windows 10 and Windows 11 (64-bit).
 
 | Package | Format | Architecture | Download Link |
 | :--- | :---: | :---: | :--- |
-| **BinBox Setup (Recommended)** | `.exe` | x64 | [**Download `BinBox_0.1.2_x64-setup.exe`**](https://github.com/Harilowji/BinBox/releases/latest/download/BinBox_0.1.2_x64-setup.exe) |
-| **Windows MSI Installer** | `.msi` | x64 | [**Download `BinBox_0.1.2_x64_en-US.msi`**](https://github.com/Harilowji/BinBox/releases/latest/download/BinBox_0.1.2_x64_en-US.msi) |
+| **BinBox Studio Setup (Recommended)** | `.exe` | x64 | [**Download `BinBox_0.2.0_x64-setup.exe`**](https://github.com/Harilowji/BinBox/releases/latest/download/BinBox_0.2.0_x64-setup.exe) |
+| **Windows MSI Installer** | `.msi` | x64 | [**Download `BinBox_0.2.0_x64_en-US.msi`**](https://github.com/Harilowji/BinBox/releases/latest/download/BinBox_0.2.0_x64_en-US.msi) |
 | **All Releases & Release Notes** | Release Page | x64 | [**View GitHub Releases**](https://github.com/Harilowji/BinBox/releases) |
 
 ### ⚡ One-Liner Install via PowerShell:

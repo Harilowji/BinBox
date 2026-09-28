@@ -17,7 +17,7 @@ import {
 const SCHEMES: SchemeName[] = ["TonalSpot", "Vibrant", "Expressive", "Neutral", "Content", "Monochrome"];
 
 const SOURCES: { id: ColorSource; name: string; icon: IconName; hint: string }[] = [
-  { id: "brand", name: "BinBox", icon: "shapes", hint: "Teal and navy from the logo." },
+  { id: "brand", name: "BinBox Studio", icon: "shapes", hint: "Dark minimalist monochrome from the logo." },
   { id: "wallpaper", name: "Wallpaper", icon: "wallpaper", hint: "Colors read from your wallpaper." },
 ];
 
@@ -57,7 +57,7 @@ const PAGES: { id: Page; label: string; blurb: string; icon: IconName }[] = [
   { id: "appearance", label: "Appearance", blurb: "Color, surface, wallpaper.", icon: "palette" },
   { id: "terminal", label: "Terminal", blurb: "Opacity, contrast, scrollback.", icon: "terminal" },
   { id: "layout", label: "Layout", blurb: "How new panels split.", icon: "grid_view" },
-  { id: "keys", label: "Shortcuts", blurb: "Keys BinBox takes before the shell.", icon: "keyboard" },
+  { id: "keys", label: "Shortcuts", blurb: "Keys BinBox Studio takes before the shell.", icon: "keyboard" },
   { id: "updates", label: "Updates", blurb: "Check for a newer build.", icon: "refresh" },
 ];
 
@@ -201,7 +201,7 @@ export function SettingsModal({ onClose }: Props) {
         <aside className="set-rail">
           <div className="set-rail-brand" aria-hidden="true">
             <img src="/logo.png" alt="" className="set-rail-logo" draggable={false} />
-            <span>BinBox</span>
+            <span>BinBox Studio</span>
           </div>
           <nav className="set-rail-nav">
             {PAGES.map((item) => (
@@ -268,7 +268,7 @@ export function SettingsModal({ onClose }: Props) {
                   <div className="set-status" title={source === "wallpaper" ? wallpaper : undefined}>
                     <span className={source === "fallback" ? "source-dot" : "source-dot live"} />
                     {opts.colorSource === "brand"
-                      ? "BinBox brand colors"
+                      ? "BinBox Studio brand colors"
                       : source === "wallpaper"
                         ? wallpaper ? `From ${fileName(wallpaper)}` : "From your wallpaper"
                         : "Fallback — wallpaper unreadable"}
@@ -449,7 +449,7 @@ export function SettingsModal({ onClose }: Props) {
               <Group label="Version">
                 <ActionRow
                   icon={<Icon name="download" size={22} />}
-                  label={`BinBox ${appVersion || "…"}`}
+                  label={`BinBox Studio ${appVersion || "…"}`}
                   note={updateNote(updateState, updateInfo, updateError)}
                   action={
                     updateState === "checking"
@@ -580,7 +580,7 @@ function updateNote(state: UpdateState, info: Update | null, error: string): str
     case "available":
       return info ? `Version ${info.version} is available.` : "A new version is available.";
     case "downloading":
-      return "Installing — BinBox will restart.";
+      return "Installing — BinBox Studio will restart.";
     case "installed":
       return "Installed. Restarting…";
     case "error":

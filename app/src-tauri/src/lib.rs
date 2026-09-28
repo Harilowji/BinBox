@@ -19,7 +19,7 @@ use watcher::WatcherManager;
 const FLUSH_MS: u64 = 12;
 
 #[tauri::command]
-fn pty_spawn(
+async fn pty_spawn(
     app: tauri::AppHandle,
     mgr: State<'_, PtyManager>,
     shell: Option<String>,

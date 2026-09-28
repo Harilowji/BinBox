@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-28
+
+> Major upgrade: Rebrand to BinBox Studio, Dark Minimalist / Monochrome palette, brand new origami emblem logo, and high-performance async Terminal PTY I/O.
+
+### Added
+- **BinBox Studio Branding**: Modern typography and origami code emblem (`< >` origami geometric box) across desktop icons, titlebar, and system fetch.
+- **Dark Minimalist / Monochrome Theme**: Deep dark backgrounds (`#0a0a0a` - `#121212`), metallic gray borders and accents, with high-contrast crisp white typography.
+
+### Performance
+- **Terminal PTY & IPC Optimization**: Batched xterm acknowledgements via compositor animation frames, non-blocking asynchronous session management preventing UI lockups and eliminating application "Not Responding" conditions under heavy command output.
+
 ## [0.1.5] - 2026-09-28
 
 > Permanent Dock and Workspace titlebar visibility by default, restoring direct access to all Tethys panels and BinBox AI Assistant.

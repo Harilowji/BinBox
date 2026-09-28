@@ -121,26 +121,17 @@ export type ThemeOptions = {
 
 /** Mặc định lấy từ `ui-demo/index.html`, nơi các con số này được kéo thử bằng tay. */
 export const DEFAULTS: ThemeOptions = {
-  appearanceVersion: 8,
-  // Workspace nên mở đúng bản chất của nó: lấy wallpaper Windows, nền kính và terminal
-  // trong mờ. Chế độ thương hiệu/phẳng vẫn là lựa chọn trong Cài đặt, không phải trạng
-  // thái khởi động làm người dùng tưởng hiệu ứng đã bị gỡ.
-  colorSource: "wallpaper",
-  surfaceStyle: "glass",
-  scheme: "TonalSpot",
+  appearanceVersion: 9,
+  // BinBox Studio mặc định phong cách Dark Minimalist / Monochrome:
+  // Nền đen sâu (#0a0a0a), viền xám kim loại metallic, chữ & icon trắng tương phản cao.
+  colorSource: "brand",
+  surfaceStyle: "flat",
+  scheme: "Monochrome",
   dark: true,
-  contrast: 0,
+  contrast: 0.15,
   termChroma: 1.7,
-  // 0,06 chứ không phải 0,18. `harmonizeHue` kéo theo *đường ngắn nhất* trên vòng hue, nên
-  // độ lệch tỉ lệ với khoảng cách tới màu gốc — và màu gốc brand là teal (hue 196), gần như
-  // đối diện đỏ (hue 25). Ở 0,18 thì đỏ bị đẩy 31° thành cam: `git diff` mất dòng xoá, log
-  // lỗi mất màu lỗi. Terminal có 16 màu ANSI là vì *nghĩa* của chúng, hoà sắc không được
-  // phép ăn vào nghĩa. 0,06 đủ để cả dãy ấm lên theo UI mà đỏ vẫn ra đỏ.
-  harmonize: 0.06,
-  // 0,6 chứ không phải 0,85. Nền terminal là `surfaceContainerLowest` — trong theme tối nó
-  // gần như đen (đo được: luma 13,9). Ở 85% thì 15% ảnh nền lọt qua chỉ nâng luma lên ~17,
-  // tức là *có* trong suốt nhưng không ai nhìn ra. 0,6 mới thấy được ảnh nền.
-  termOpacity: 0.6,
+  harmonize: 0.0,
+  termOpacity: 1.0,
   terminalScrollback: 5000,
   dockAutoHide: false,
   navAutoHide: false,
@@ -167,24 +158,19 @@ export const TERM_OPACITY_MAX = 1;
    từ ba con số này hoặc từ ảnh nền.
    ────────────────────────────────────────────────────────────────────────── */
 
-/** Thân sứa. HCT: hue 196,1 · chroma 46,4 · tone 79,2. Đây là accent của cả app. */
-export const BRAND_TEAL = 0xff53d7d6;
-/** Nền logo. HCT: hue 263,7 · chroma 18,5 · tone 10,2. Đây là nền của cả app. */
-export const BRAND_NAVY = 0xff111c2f;
-/** Xúc tu trắng. HCT: hue 246,6 · chroma 10,4 · tone 94,8. Chữ sáng nhất dừng ở đây. */
-export const BRAND_MIST = 0xffe9f1fc;
+/** Typography & emblem: Trắng sáng tương phản cao (#FFFFFF). */
+export const BRAND_WHITE = 0xffffffff;
+/** Nền đen sâu chuẩn BinBox Studio (#0a0a0a). */
+export const BRAND_BLACK = 0xff0a0a0a;
+/** Xám kim loại metallic viền và điểm nhấn (#3a424e). */
+export const BRAND_METALLIC = 0xff3a424e;
 
-/**
- * Chroma của tonal palette trung tính ở chế độ brand.
- *
- * M3 để neutral gần như xám (chroma 4…8). Ở đây phải cao hơn hẳn, vì nền logo *không* xám —
- * nó là navy có màu thật, chroma 18,5. Để 6 thì app ra một cái hộp xám và teal trôi nổi
- * bên trên, không còn liên quan gì tới logo nữa.
- */
-const BRAND_NEUTRAL_CHROMA = 14;
+export const BRAND_TEAL = BRAND_WHITE;
+export const BRAND_NAVY = BRAND_BLACK;
+export const BRAND_MIST = BRAND_WHITE;
 
-/** Chỉ dùng khi không đọc nổi ảnh nền — và khi đó thì rơi về đúng màu thương hiệu. */
-export const FALLBACK_SEED = BRAND_TEAL;
+/** Chỉ dùng khi không đọc nổi ảnh nền — rơi về sắc xám bạc trung tính thanh lịch. */
+export const FALLBACK_SEED = 0xffe0e0e0;
 
 const SCHEMES = {
   TonalSpot: SchemeTonalSpot,
@@ -202,34 +188,22 @@ export function buildScheme(seed: number, o: ThemeOptions): DynamicScheme {
 }
 
 /**
- * Bảng màu thương hiệu: ép từng tonal palette thay vì thả cho một `Scheme*` tự suy diễn.
- *
- * Vì sao không dùng thẳng `SchemeVibrant(teal)`? Vì scheme nào cũng suy ra neutral **từ hue
- * của primary**. Cho nó màu gốc teal thì nền ra xám ám teal, còn nền logo lại là navy — hai
- * hue cách nhau gần 70°. Logo có *hai* màu gốc chứ không phải một, nên bảng màu cũng phải
- * được nuôi bằng hai màu: teal cầm nhóm primary, navy cầm nhóm nền.
- *
- * `contrastLevel` vẫn nghe theo tuỳ chọn của người dùng, nên thanh Tương phản không chết ở
- * chế độ này. `Variant.VIBRANT` chỉ còn là nhãn khai báo — mọi palette đều đã truyền tay.
+ * Bảng màu thương hiệu BinBox Studio: Phong cách Dark Minimalist / Monochrome
+ * Nền đen sâu (#0a0a0a - #121212), viền xám kim loại Metallic Gray, chữ & icon trắng tương phản cao.
  */
 export function buildBrandScheme(o: ThemeOptions): DynamicScheme {
-  const teal = Hct.fromInt(BRAND_TEAL);
-  const navy = Hct.fromInt(BRAND_NAVY);
+  const white = Hct.fromInt(BRAND_WHITE);
+  const metallic = Hct.fromInt(BRAND_METALLIC);
   return new DynamicScheme({
-    sourceColorHct: teal,
-    variant: Variant.VIBRANT,
-    contrastLevel: o.contrast,
+    sourceColorHct: white,
+    variant: Variant.MONOCHROME,
+    contrastLevel: Math.max(0.15, o.contrast),
     isDark: o.dark,
-    primaryPalette: TonalPalette.fromHueAndChroma(teal.hue, teal.chroma),
-    // Secondary dịu hẳn: nó là nền của chip, tab đang chọn, vùng bôi đen — những mảng lớn.
-    // Để nguyên chroma của teal thì mỗi tab đang chọn là một vệt sáng chói giữa màn hình.
-    secondaryPalette: TonalPalette.fromHueAndChroma(teal.hue, 20),
-    // Tertiary lệch về phía navy để có màu thứ ba mà vẫn nằm trong hai đầu của logo.
-    tertiaryPalette: TonalPalette.fromHueAndChroma(navy.hue, 30),
-    neutralPalette: TonalPalette.fromHueAndChroma(navy.hue, BRAND_NEUTRAL_CHROMA),
-    // Neutral-variant rực hơn neutral (đúng quy ước M3) — nó cầm outline và surface-variant,
-    // tức là đúng những đường mà style phẳng dựa vào để phân tầng thay cho bóng đổ.
-    neutralVariantPalette: TonalPalette.fromHueAndChroma(navy.hue, BRAND_NEUTRAL_CHROMA * 1.5),
+    primaryPalette: TonalPalette.fromHueAndChroma(0, 0),
+    secondaryPalette: TonalPalette.fromHueAndChroma(metallic.hue, 4),
+    tertiaryPalette: TonalPalette.fromHueAndChroma(metallic.hue, 8),
+    neutralPalette: TonalPalette.fromHueAndChroma(0, 0),
+    neutralVariantPalette: TonalPalette.fromHueAndChroma(metallic.hue, 6),
   });
 }
 

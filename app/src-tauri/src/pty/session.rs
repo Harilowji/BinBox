@@ -12,8 +12,8 @@ pub type SessionId = u32;
 /// Tăng lên 64 để hỗ trợ lượng stream lớn mượt mà không gây nghẽn UI, nhưng vẫn chặn phình RAM.
 const MAX_IN_FLIGHT: usize = 64;
 
-/// Hạn chờ ACK giảm xuống 250ms để không bao giờ treo khựng terminal nếu frontend trễ ACK.
-const ACK_TIMEOUT: Duration = Duration::from_millis(250);
+/// Hạn chờ ACK giảm xuống 150ms để không bao giờ treo khựng terminal nếu frontend trễ ACK.
+const ACK_TIMEOUT: Duration = Duration::from_millis(150);
 
 const READ_BUF: usize = 1 << 16;
 
@@ -40,6 +40,9 @@ impl Flow {
             let (guard, timeout) = self.cv.wait_timeout(n, ACK_TIMEOUT).unwrap();
             n = guard;
             if timeout.timed_out() {
+                // Thoát nghẽn dây chuyền: nếu quá hạn ACK (do webview bận render/GC),
+                // giải tỏa một nửa hạn mức để luồng dữ liệu tiếp tục mà không khựng thêm.
+                *n = MAX_IN_FLIGHT / 2;
                 break;
             }
         }

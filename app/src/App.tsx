@@ -253,26 +253,26 @@ export default function App() {
               restore(saved.layout, saved.panels, saved.focused ?? null);
             }
             if (saved.theme_opts) {
-              // Các bản trước khởi động ở brand + surface phẳng, nên ngay cả khi backend
-              // đã tìm được wallpaper thì nó vẫn bị che kín. Nâng state cũ một lần sang
-              // giao diện kính; từ đây trở đi người dùng đổi lại Phẳng vẫn được giữ nguyên.
+              // Nâng cấp mốc v0.2.0 sang phong cách Dark Minimalist / Monochrome đồng bộ logo BinBox Studio.
               const savedTheme = saved.theme_opts as Record<string, unknown>;
               const legacyAppearance = savedTheme.appearanceVersion === undefined;
-              const preV8 =
+              const preV9 =
                 legacyAppearance ||
-                (typeof savedTheme.appearanceVersion === "number" && savedTheme.appearanceVersion < 8);
+                (typeof savedTheme.appearanceVersion === "number" && savedTheme.appearanceVersion < 9);
               setOpts(
-                preV8
+                preV9
                   ? {
                       ...savedTheme,
-                      appearanceVersion: 8,
-                      colorSource: "wallpaper",
-                      surfaceStyle: "glass",
-                      windowVibrancy: true,
-                      blurEffects: true,
+                      appearanceVersion: 9,
+                      colorSource: "brand",
+                      surfaceStyle: "flat",
+                      scheme: "Monochrome",
+                      dark: true,
+                      contrast: 0.15,
+                      termChroma: 1.0,
                       dockAutoHide: false,
                       navAutoHide: false,
-                      termOpacity: 0.6,
+                      termOpacity: 1.0,
                     }
                   : savedTheme,
               );

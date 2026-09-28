@@ -149,8 +149,10 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
     // Mở nhiều panel một lúc (khôi phục layout đã lưu) thì mọi panel trừ cái cuối đều dính.
     const pendingIn: number[] = [];
     let pendingAcks = 0;
+    let flushScheduled = false;
 
     const flush = () => {
+      flushScheduled = false;
       if (id === null) return;
       // Output acknowledgements must never pause in a hidden workspace. Otherwise the
       // backend's back-pressure window fills, throttling the shell until another chunk
@@ -166,6 +168,22 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
       }
     };
     flushRef.current = flush;
+
+    // Batch các ACK output qua compositor frame để không làm nghẽn vòng lặp IPC của WebView2,
+    // đồng thời giữ việc xả ngay lập tức cho các tương tác gõ phím của người dùng.
+    const scheduleFlush = () => {
+      if (flushScheduled) return;
+      flushScheduled = true;
+      if (panelVisibleRef.current && typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => {
+          flush();
+        });
+      } else {
+        setTimeout(() => {
+          flush();
+        }, 16);
+      }
+    };
 
     // Gắn TRƯỚC khi spawn. Xem chú thích trên.
     term.onData((d) => {
@@ -186,7 +204,7 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
       }
       term.write(data, () => {
         pendingAcks += 1;
-        flush();
+        scheduleFlush();
         resolve();
       });
     });

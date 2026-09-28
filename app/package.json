@@ -1,9 +1,9 @@
 {
-  "name": "binbox",
-  "description": "BinBox - Modern Tiling Workspace for Developers & AI Agents on Windows",
+  "name": "binbox-studio",
+  "description": "BinBox Studio - Modern Tiling Workspace for Developers & AI Agents on Windows",
   "author": "Shadow",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

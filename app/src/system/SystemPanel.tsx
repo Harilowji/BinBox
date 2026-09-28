@@ -58,7 +58,7 @@ const LOGO = [
   "██████╔╝██║██║ ╚████║██████╔╝╚██████╔╝██╔╝ ██╗",
   "╚═════╝ ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝",
 ];
-const LOGO_RULE = "──────────────  B I N B O X  ──────────────";
+const LOGO_RULE = "────────  B I N B O X   S T U D I O  ────────";
 
 const BAR_WIDTH = 16;
 const BAR_CELLS = "░".repeat(BAR_WIDTH);
@@ -217,7 +217,7 @@ export function SystemPanel({ panelKey, visible = true }: { panelKey: string; vi
     if (density !== "compact") {
       push("Kernel", info.kernel);
       push("Shell", info.shell);
-      push("Terminal", "BinBox");
+      push("Terminal", "BinBox Studio");
       push("GPU", info.gpu);
     }
   }

@@ -181,8 +181,8 @@ export function Titlebar({
       <div className="tb-bar" data-tauri-drag-region>
         <div className="titlebar-left" data-tauri-drag-region>
           <div className="brand" data-tauri-drag-region>
-            <img src="/logo.png" alt="BinBox Logo" className="brand-logo" data-tauri-drag-region draggable={false} />
-            <span className="brand-name" data-tauri-drag-region>BinBox</span>
+            <img src="/logo.png" alt="BinBox Studio Logo" className="brand-logo" data-tauri-drag-region draggable={false} />
+            <span className="brand-name" data-tauri-drag-region>BinBox Studio</span>
           </div>
         </div>
 
