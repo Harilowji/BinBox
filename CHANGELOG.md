@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-29
+
+> Hyprland / i3wm-inspired Industrial Minimalist UI refactoring, Origami BB chamfer cuts, 0px tiling panels, and Unified Background Provider with Wallpaper Engine sync.
+
+### Added
+- **Unified Background Provider**: Supports 3 distinct modes — Brand Solid Color, Custom Static Images (zero Base64 memory overhead via Tauri file asset URLs), and Zero-Polling Wallpaper Engine live video/scene wallpaper synchronization.
+- **Dynamic HCT Palette Engine for Wallpaper Engine**: Auto-extracts dominant colors from active Steam wallpapers and harmonizes UI accents on the fly.
+- **Origami BB Chamfer Utilities**: 45-degree chamfer cut utilities (`.chamfer-tr`, `.chamfer-all`) applied across Command Palette, Settings Modal, and micro-controls.
+
+### Changed
+- **Industrial Minimalist UI/UX Refactoring**: Completely eliminated rounded SaaS components and soft blurry shadows. All tiling workspace panels now feature sharp 0px corners, flush headers with zero wasted margins, 2px maximum radius on micro-buttons/tags, and 1px crisp high-contrast metallic borders.
+
 ## [0.2.0] - 2026-09-28
 
 > Major upgrade: Rebrand to BinBox Studio, Dark Minimalist / Monochrome palette, brand new origami emblem logo, and high-performance async Terminal PTY I/O.
