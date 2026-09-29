@@ -48,11 +48,75 @@ pub fn parse_active_wallpaper(
     resolve_wallpaper_target(&target_path, cache_dir)
 }
 
-/// Trích xuất trường `file` từ cấu trúc `selectedwallpapers` trong JSON của Wallpaper Engine
+/// Trích xuất trường `file` từ cấu trúc JSON của Wallpaper Engine.
+/// Thuật toán duyệt qua toàn bộ profiles người dùng tương thích chính xác với WESyncServer.js.
 fn extract_wallpaper_file_from_json(json: &serde_json::Value) -> Option<String> {
-    // 1. Thử `wallpaperconfig.selectedwallpapers`
+    // 1. Duyệt qua tất cả profile người dùng (e.g. "Shadow", "steamuser", "Default"...)
+    if let Some(root_obj) = json.as_object() {
+        for (key, val) in root_obj {
+            if key.starts_with('?') {
+                continue;
+            }
+
+            // Case 1A: [profile].general.wallpaperconfig.selectedwallpapers
+            if let Some(selected) = val
+                .get("general")
+                .and_then(|g| g.get("wallpaperconfig"))
+                .and_then(|wc| wc.get("selectedwallpapers"))
+                .and_then(|sw| sw.as_object())
+            {
+                for (_monitor_id, config_val) in selected {
+                    if let Some(file) = config_val.get("file").and_then(|f| f.as_str()) {
+                        if !file.trim().is_empty() {
+                            return Some(file.trim().to_string());
+                        }
+                    }
+                }
+            }
+
+            // Case 1B: [profile].wallpaperconfig.selectedwallpapers
+            if let Some(selected) = val
+                .get("wallpaperconfig")
+                .and_then(|wc| wc.get("selectedwallpapers"))
+                .and_then(|sw| sw.as_object())
+            {
+                for (_monitor_id, config_val) in selected {
+                    if let Some(file) = config_val.get("file").and_then(|f| f.as_str()) {
+                        if !file.trim().is_empty() {
+                            return Some(file.trim().to_string());
+                        }
+                    }
+                }
+            }
+
+            // Case 1C: [profile].general.wallpaperconfigrecent (dự phòng wallpaper gần nhất)
+            if let Some(recent_list) = val
+                .get("general")
+                .and_then(|g| g.get("wallpaperconfigrecent"))
+                .and_then(|r| r.as_array())
+            {
+                for recent in recent_list {
+                    if let Some(file) = recent
+                        .get("config")
+                        .and_then(|c| c.get("selectedwallpapers"))
+                        .and_then(|sw| sw.as_object())
+                        .and_then(|obj| {
+                            obj.values().find_map(|v| v.get("file").and_then(|f| f.as_str()))
+                        })
+                    {
+                        if !file.trim().is_empty() {
+                            return Some(file.trim().to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Thử trực tiếp ở root level
     if let Some(selected) = json
         .get("wallpaperconfig")
+        .or_else(|| json.get("general").and_then(|g| g.get("wallpaperconfig")))
         .and_then(|wc| wc.get("selectedwallpapers"))
         .and_then(|sw| sw.as_object())
     {
@@ -65,7 +129,7 @@ fn extract_wallpaper_file_from_json(json: &serde_json::Value) -> Option<String> 
         }
     }
 
-    // 2. Dự phòng: `wallpaperconfigrecent` (danh sách các wallpaper vừa chọn gần nhất)
+    // 3. Dự phòng: root `wallpaperconfigrecent`
     if let Some(recent_list) = json
         .get("wallpaperconfigrecent")
         .and_then(|r| r.as_array())
@@ -82,6 +146,78 @@ fn extract_wallpaper_file_from_json(json: &serde_json::Value) -> Option<String> 
                 if !file.trim().is_empty() {
                     return Some(file.trim().to_string());
                 }
+            }
+        }
+    }
+
+    None
+}
+
+/// Tính mã băm định danh ngắn từ đường dẫn để lưu cache ổn định
+fn hash_path(path: &Path) -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut hasher = DefaultHasher::new();
+    path.to_string_lossy().hash(&mut hasher);
+    format!("{:016x}", hasher.finish())
+}
+
+/// Trích xuất ảnh PNG hoặc JPEG HD/4K nhúng trong texture file (.tex) của Scene Wallpaper.
+/// Thuật toán chính xác từ WESyncServer.js (lines 180-280).
+fn carve_embedded_image<R: Read + Seek>(
+    reader: &mut R,
+    data_start: u64,
+    entry: &PkgEntry,
+    cache_dir: &Path,
+    pkg_hash: &str,
+) -> Option<PathBuf> {
+    let cached_png = cache_dir.join(format!("{pkg_hash}_hd.png"));
+    if cached_png.is_file() && cached_png.metadata().map(|m| m.len() > 0).unwrap_or(false) {
+        return Some(cached_png);
+    }
+    let cached_jpg = cache_dir.join(format!("{pkg_hash}_hd.jpg"));
+    if cached_jpg.is_file() && cached_jpg.metadata().map(|m| m.len() > 0).unwrap_or(false) {
+        return Some(cached_jpg);
+    }
+
+    // Giới hạn kích thước texture tối đa 64MB để bảo toàn RAM
+    if entry.size == 0 || entry.size > 64 * 1024 * 1024 {
+        return None;
+    }
+
+    if reader.seek(SeekFrom::Start(data_start + entry.offset as u64)).is_err() {
+        return None;
+    }
+
+    let mut buf = vec![0u8; entry.size as usize];
+    if reader.read_exact(&mut buf).is_err() {
+        return None;
+    }
+
+    // 1. Tìm cấu trúc ảnh PNG gốc (\x89PNG\r\n\x1a\n ... IEND\xaeB`\x82)
+    const PNG_HEADER: &[u8] = b"\x89PNG\r\n\x1a\n";
+    const PNG_IEND: &[u8] = b"IEND\xaeB`\x82";
+    if let Some(png_start) = buf.windows(PNG_HEADER.len()).position(|w| w == PNG_HEADER) {
+        if let Some(iend_rel) = buf[png_start..].windows(PNG_IEND.len()).position(|w| w == PNG_IEND) {
+            let png_end = png_start + iend_rel + PNG_IEND.len();
+            let png_data = &buf[png_start..png_end];
+            let _ = std::fs::create_dir_all(cache_dir);
+            if std::fs::write(&cached_png, png_data).is_ok() {
+                return Some(cached_png);
+            }
+        }
+    }
+
+    // 2. Tìm cấu trúc ảnh JPEG gốc (\xff\xd8\xff ... \xff\xd9)
+    const JPG_HEADER: &[u8] = b"\xff\xd8\xff";
+    const JPG_EOI: &[u8] = b"\xff\xd9";
+    if let Some(jpg_start) = buf.windows(JPG_HEADER.len()).position(|w| w == JPG_HEADER) {
+        if let Some(eoi_rel) = buf[jpg_start..].windows(JPG_EOI.len()).position(|w| w == JPG_EOI) {
+            let jpg_end = jpg_start + eoi_rel + JPG_EOI.len();
+            let jpg_data = &buf[jpg_start..jpg_end];
+            let _ = std::fs::create_dir_all(cache_dir);
+            if std::fs::write(&cached_jpg, jpg_data).is_ok() {
+                return Some(cached_jpg);
             }
         }
     }
@@ -125,7 +261,17 @@ pub fn resolve_wallpaper_target(
         return parse_pkg_wallpaper(target_path, parent_dir, cache_dir, title);
     }
 
-    // 3. Trường hợp Wallpaper dạng Ảnh tĩnh (.jpg / .jpeg / .png / .webp / .gif)
+    // 3. Nếu rawPath không phải đuôi .pkg nhưng trong thư mục có scene.pkg hoặc gifscene.pkg (tương tự WESyncServer.js lines 322-337)
+    let scene_pkg = parent_dir.join("scene.pkg");
+    if scene_pkg.is_file() {
+        return parse_pkg_wallpaper(&scene_pkg, parent_dir, cache_dir, title);
+    }
+    let gifscene_pkg = parent_dir.join("gifscene.pkg");
+    if gifscene_pkg.is_file() {
+        return parse_pkg_wallpaper(&gifscene_pkg, parent_dir, cache_dir, title);
+    }
+
+    // 4. Trường hợp Wallpaper dạng Ảnh tĩnh (.jpg / .jpeg / .png / .webp / .gif)
     if matches!(ext.as_str(), "jpg" | "jpeg" | "png" | "webp" | "gif") {
         let path_str = target_path.to_string_lossy().to_string();
         return Ok(WeWallpaperInfo {
@@ -137,9 +283,20 @@ pub fn resolve_wallpaper_target(
         });
     }
 
-    // 4. Nếu file là `project.json`
+    // 5. Nếu file là `project.json`
     if target_path.file_name().and_then(|n| n.to_str()) == Some("project.json") {
         return parse_project_json_target(target_path, cache_dir);
+    }
+
+    // 6. Tìm ảnh preview đồng hành trong thư mục workshop
+    if let Some(companion_thumb) = find_companion_thumbnail(parent_dir) {
+        return Ok(WeWallpaperInfo {
+            title,
+            wallpaper_type: "scene".to_string(),
+            media_path: companion_thumb.clone(),
+            is_video: false,
+            thumbnail_path: Some(companion_thumb),
+        });
     }
 
     // Mặc định fallback nếu không nhận diện được định dạng
@@ -154,15 +311,7 @@ pub fn resolve_wallpaper_target(
 }
 
 /// Bộ phân giải nhị phân (Binary Parser) cho file .pkg của Wallpaper Engine.
-/// Định dạng:
-/// - Version string length (u32 little endian)
-/// - Version string (e.g. "PKGV0001", "PKGV0019")
-/// - File count (u32 little endian)
-/// - For each file:
-///   - Name length (u32)
-///   - Name (UTF-8 bytes)
-///   - Offset (u32 relative to data start)
-///   - Size (u32)
+/// Trích xuất video hoặc ảnh texture HD 4K gốc theo thuật toán WESyncServer.js.
 pub fn parse_pkg_wallpaper(
     pkg_path: &Path,
     parent_dir: &Path,
@@ -174,14 +323,13 @@ pub fn parse_pkg_wallpaper(
 
     let (version, entries, data_start) = parse_pkg_header(&mut reader)?;
 
-    // Kiểm tra xem bên trong package có file video (.mp4/.webm) không
+    // 1. Kiểm tra xem bên trong package có file video (.mp4/.webm) không
     let video_entry = entries.iter().find(|e| {
         let lower = e.name.to_ascii_lowercase();
         lower.ends_with(".mp4") || lower.ends_with(".webm")
     });
 
     if let Some(entry) = video_entry {
-        // Trích xuất video vào thư mục cache
         let safe_name = entry.name.replace(['/', '\\'], "_");
         let out_path = cache_dir.join(format!("pkg_extracted_{safe_name}"));
         if !out_path.is_file() {
@@ -198,8 +346,33 @@ pub fn parse_pkg_wallpaper(
         });
     }
 
-    // Nếu không có video, đây là Scene wallpaper:
-    // 1. Tìm ảnh preview đồng hành trong thư mục (preview.jpg, preview.png, preview.gif...)
+    // 2. Trích xuất Texture HD/4K từ file .tex/.png/.jpg lớn nhất bên trong .pkg (WESyncServer.js logic)
+    let pkg_hash = hash_path(pkg_path);
+    let largest_tex = entries
+        .iter()
+        .filter(|e| {
+            let lower = e.name.to_ascii_lowercase();
+            lower.ends_with(".tex")
+                || lower.ends_with(".png")
+                || lower.ends_with(".jpg")
+                || lower.ends_with(".jpeg")
+        })
+        .max_by_key(|e| e.size);
+
+    if let Some(entry) = largest_tex {
+        if let Some(hd_path) = carve_embedded_image(&mut reader, data_start, entry, cache_dir, &pkg_hash) {
+            let path_str = hd_path.to_string_lossy().to_string();
+            return Ok(WeWallpaperInfo {
+                title,
+                wallpaper_type: "scene".to_string(),
+                media_path: path_str.clone(),
+                is_video: false,
+                thumbnail_path: Some(path_str),
+            });
+        }
+    }
+
+    // 3. Nếu không trích xuất được HD từ .pkg, tìm ảnh preview đồng hành trong thư mục workshop
     if let Some(companion_thumb) = find_companion_thumbnail(parent_dir) {
         return Ok(WeWallpaperInfo {
             title,
@@ -210,35 +383,7 @@ pub fn parse_pkg_wallpaper(
         });
     }
 
-    // 2. Nếu không có file thumbnail bên ngoài, tìm kiếm xem trong .pkg có file ảnh tĩnh không
-    let img_entry = entries.iter().find(|e| {
-        let lower = e.name.to_ascii_lowercase();
-        lower.ends_with(".jpg")
-            || lower.ends_with(".jpeg")
-            || lower.ends_with(".png")
-            || lower.ends_with(".webp")
-    });
-
-    if let Some(entry) = img_entry {
-        let safe_name = entry.name.replace(['/', '\\'], "_");
-        let out_path = cache_dir.join(format!("pkg_thumb_{safe_name}"));
-        if !out_path.is_file() {
-            let _ = std::fs::create_dir_all(cache_dir);
-            let _ = extract_pkg_entry(&mut reader, data_start, entry, &out_path);
-        }
-        if out_path.is_file() {
-            let p_str = out_path.to_string_lossy().to_string();
-            return Ok(WeWallpaperInfo {
-                title,
-                wallpaper_type: "scene".to_string(),
-                media_path: p_str.clone(),
-                is_video: false,
-                thumbnail_path: Some(p_str),
-            });
-        }
-    }
-
-    // Fallback nếu không trích xuất được
+    // 4. Fallback cuối cùng
     Ok(WeWallpaperInfo {
         title,
         wallpaper_type: format!("scene ({version})"),

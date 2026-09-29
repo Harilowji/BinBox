@@ -6,7 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-## [0.2.1] - 2026-09-29
+## [0.2.2] - 2026-09-30
+
+> Wallpaper Engine deep sync engine matching WESyncServer.js algorithm, HD/4K .tex texture carving, and translucent glassmorphism terminal layer.
+
+### Added
+- **True Wallpaper Engine Parser & Auto-Discovery**: Iterates through all Steam user profiles (`[profile].general.wallpaperconfig.selectedwallpapers`) in `config.json` across monitors, matching the exact discovery algorithm from the user's Spotify project (`WESyncServer.js`).
+- **Embedded HD/4K Texture Extractor**: Binary parser automatically extracts 4K/HD raw PNG or JPEG images embedded inside `.tex` containers in Wallpaper Engine scene `.pkg` archives with zero polling overhead.
+- **Translucent Glassmorphism Terminal**: Terminal canvas seamlessly renders over live Wallpaper Engine videos and scenes with configurable Dim Opacity (0–90%) and Blur Radius (0–20px) while maintaining 100% text contrast and readability for `agy`.
+- **Persistent Background Settings**: Background preferences (mode, dim opacity, blur radius, sync colors) are automatically persisted across application launches.
+
+### Fixed
+- **Terminal Solid Black Occlusion**: Removed hardcoded opaque background override on `.term` when Unified Background is active, allowing live background video and scene textures to display beneath terminal sessions.
+- **Root-level config.json parsing failure**: Fixed bug where `wallpaperconfig` was only queried at the root JSON level instead of nested under user profile branches.
 
 > Hyprland / i3wm-inspired Industrial Minimalist UI refactoring, Origami BB chamfer cuts, 0px tiling panels, and Unified Background Provider with Wallpaper Engine sync.
 

@@ -120,6 +120,61 @@ body {
   background: transparent !important;
 }
 
+.app.has-unified-bg.surface-flat {
+  background: transparent !important;
+}
+
+/* Translucent glassmorphism for terminal canvas when Unified Background is active */
+.app.has-unified-bg .panel.terminal-panel {
+  background: transparent !important;
+}
+
+.app.has-unified-bg .panel.terminal-panel::before {
+  background-image: var(--glass-noise) !important;
+}
+
+.app.has-unified-bg .term {
+  background: color-mix(
+    in srgb,
+    var(--ui-surface-container-lowest, #0a0a0a) 65%,
+    transparent
+  ) !important;
+}
+
+.app.has-unified-bg .panel.terminal-panel .panel-head {
+  background: color-mix(
+    in srgb,
+    var(--ui-surface-container-low, #12161f) 72%,
+    transparent
+  ) !important;
+}
+
+.app.has-unified-bg .panel-host.on .panel.terminal-panel .panel-head {
+  background: color-mix(
+    in srgb,
+    var(--ui-surface-container-high, #1e232e) 80%,
+    transparent
+  ) !important;
+}
+
+.app.has-unified-bg .panel:not(.terminal-panel) {
+  background: color-mix(
+    in srgb,
+    var(--ui-surface-container-lowest, #0e1117) 88%,
+    transparent
+  );
+}
+
+.app.has-unified-bg .tb-bar,
+.app.has-unified-bg .dock {
+  background: color-mix(
+    in srgb,
+    var(--ui-surface-container, #141822) 75%,
+    transparent
+  ) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
 /* Unified Background Layer (Solid, Custom Image, Wallpaper Engine Sync) */
 .unified-bg-container {
   position: fixed;
