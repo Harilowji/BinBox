@@ -3,7 +3,7 @@ pub mod parser;
 pub mod watcher;
 
 pub use parser::WeWallpaperInfo;
-pub use watcher::{we_get_current, we_set_active, WeManager};
+pub use watcher::*;
 
 #[cfg(test)]
 mod tests {
