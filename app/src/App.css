@@ -2,11 +2,19 @@
    KHÔNG hex nào ở đây. Nếu thấy `#` trong file này nghĩa là có chỗ đã đi tắt.
 
    Chỉ thị U1 — không glow: phân tầng bằng bậc surface + `outline-variant`,
-   không bằng hào quang màu. Bóng nếu có thì là bóng đen tả độ cao, không phải màu.
-   Chỉ thị U2 — round, soft: shape scale M3, chroma thấp cho chrome. */
+   không bằng hào quang màu.
+   Chỉ thị U2 — Hyprland / i3wm Industrial Minimalist: 0px panel, 2px controls, chamfer cuts. */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
+
+/* Utility vát góc 45 độ (Chamfer Cut) đồng bộ theo khối Origami BB */
+.chamfer-tr {
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+.chamfer-all {
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+}
 
 body {
   font: 13px "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
@@ -67,31 +75,30 @@ body {
      Độ đậm nằm trong thuộc tính opacity của chính SVG — rất khẽ, thấy được thì thành nhiễu. */
   --glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
 
-  /* Shape scale M3 */
-  --r-xs: 6px;
-  --r-sm: 9px;
-  --r-md: 13px;
-  --r-lg: 17px;
-  --r-xl: 22px;
-  --r-xxl: 28px;
-  --r-full: 9999px;
-  /* Bo góc panel — §7.7 điểm 1 nói phải chỉnh được, đây là chỗ chỉnh. */
-  --r-panel: 18px;
+  /* Hyprland / i3wm Industrial Minimalist Shape Scale */
+  --r-xs: 2px;
+  --r-sm: 2px;
+  --r-md: 2px;
+  --r-lg: 2px;
+  --r-xl: 0px;
+  --r-xxl: 0px;
+  --r-full: 2px;
+  /* Bo góc panel — Sharp tiling 0px */
+  --r-panel: 0px;
 
   /* Khe giữa các panel. Phải khớp `GUTTER` trong `layout/geometry.ts`. */
   --gap: 10px;
-  /* Lề quanh thanh trên. Đây là thứ biến nó từ "dính mép" thành "nổi". */
+  /* Lề quanh thanh trên. */
   --bar-inset: 8px;
-  /* 44px là chiều cao nhỏ nhất còn chứa được một vùng bấm 32px cùng lề trên dưới 6px.
-     Bản 40px ép mọi thứ bên trong xuống dưới ngưỡng đó. */
   --nav-bar-h: 44px;
   /* Cao thực: thanh 40px cộng khoảng hở nổi 8px ở phía trên. */
   --titlebar-h: calc(var(--nav-bar-h) + var(--bar-inset));
   --head-h: 34px;
   --dock-h: 54px;
 
-  /* Bóng đổ tả độ cao, không tả màu (chỉ thị U1). */
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.18);
+  /* Loại bỏ đổ bóng mềm mờ nhạt (shadow-md/lg/xl) theo phong cách công nghiệp sắc nét */
+  --shadow-1: none;
+  --shadow-2: none;
 
   --font-mono: "CaskaydiaCove Nerd Font", "Cascadia Mono", Consolas, monospace;
 }
@@ -219,7 +226,7 @@ body {
   transform: translateX(-50%);
   border-radius: var(--r-full);
   background: color-mix(in srgb, var(--ui-primary) 65%, transparent);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.22);
+  box-shadow: none;
   transition: opacity 140ms var(--e-standard), transform 260ms var(--e-window);
 }
 .app.nav-auto .titlebar:hover::after,
@@ -600,7 +607,7 @@ body.resizing-window .gutter,
 
 /* Panel mở trên layer riêng để xterm nhận input ngay; chỉ opacity/transform được animate. */
 @keyframes panel-pop {
-  0% { transform: translate3d(0, 14px, 0) scale(0.96); opacity: 0; border-radius: var(--r-xxl); }
+  0% { transform: translate3d(0, 14px, 0) scale(0.96); opacity: 0; }
   68% { transform: translate3d(0, -2px, 0) scale(1.006); opacity: 1; }
   100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
 }
@@ -842,13 +849,14 @@ body.resizing-window .gutter,
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 4px 4px 0;
-  padding: 0 5px 0 10px;
+  margin: 0;
+  padding: 0 8px 0 10px;
   color: var(--ui-on-surface-variant);
   font-size: 11.5px;
   background: var(--ui-surface-container-low);
-  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 20%, transparent);
-  border-radius: var(--r-md);
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-outline-variant) 25%, transparent);
+  border-radius: 0px;
   user-select: none;
   cursor: grab;
   touch-action: none;
@@ -1111,15 +1119,16 @@ body.dragging-panel .iconbtn.move-handle { cursor: grabbing; }
   width: min(940px, 100%);
   height: min(650px, 100%);
   display: flex;
-  border-radius: var(--r-xxl);
+  border-radius: var(--r-xs);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
   overflow: hidden;
   background: color-mix(in srgb, var(--ui-surface-container-low) 94%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 30%, transparent);
-  box-shadow: 0 18px 46px rgb(0 0 0 / 0.36);
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 45%, transparent);
+  box-shadow: none;
   animation: settings-modal-in 420ms var(--e-spring-soft) both;
 }
 @keyframes settings-modal-in {
-  from { opacity: 0; transform: scale(0.955) translate3d(0, 18px, 0); border-radius: 38px; }
+  from { opacity: 0; transform: scale(0.955) translate3d(0, 18px, 0); }
   to { opacity: 1; transform: none; }
 }
 @keyframes settings-modal-out {
@@ -2075,7 +2084,7 @@ body.dragging-panel * {
 }
 
 .pv-err {
-  padding: 12px; border-radius: 8px;
+  padding: 12px; border-radius: var(--r-xs);
   background: var(--ui-error-container); color: var(--ui-on-error-container);
   font-size: 12px;
 }
@@ -2085,7 +2094,7 @@ body.dragging-panel * {
 }
 .pv-img {
   max-width: 100%; max-height: 100%; object-fit: contain;
-  border-radius: 8px; border: 1px solid var(--ui-outline-variant);
+  border-radius: var(--r-xs); border: 1px solid var(--ui-outline-variant);
   background: var(--ui-surface-container-low);
 }
 
@@ -2105,12 +2114,12 @@ body.dragging-panel * {
 .md p { margin: 8px 0; }
 .md code {
   font-family: var(--font-mono); font-size: 11.5px;
-  padding: 2px 6px; border-radius: 4px;
+  padding: 2px 6px; border-radius: var(--r-xs);
   background: var(--ui-surface-container-high); color: var(--ui-tertiary);
 }
 .md pre {
   font-family: var(--font-mono); font-size: 11.5px; line-height: 1.45;
-  padding: 10px 12px; border-radius: 8px;
+  padding: 10px 12px; border-radius: var(--r-xs);
   background: var(--ui-surface-container-low); border: 1px solid var(--ui-outline-variant);
   overflow-x: auto; margin: 10px 0; color: var(--ui-on-surface);
 }
@@ -2135,7 +2144,7 @@ body.dragging-panel * {
 /* Diff formatting */
 .diff-table {
   font-family: var(--font-mono); font-size: 12px; line-height: 1.45;
-  border-radius: 8px; overflow: hidden; border: 1px solid var(--ui-outline-variant);
+  border-radius: var(--r-xs); overflow: hidden; border: 1px solid var(--ui-outline-variant);
   background: var(--ui-surface-container-lowest);
 }
 .diff-row {
@@ -2191,15 +2200,16 @@ body.dragging-panel * {
   max-width: 90vw;
   background: var(--ui-surface-container-high);
   border: 1px solid var(--ui-outline-variant);
-  border-radius: var(--r-xxl);
+  border-radius: var(--r-xs);
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 16px 42px rgb(0 0 0 / 0.32);
+  box-shadow: none;
   animation: palette-modal-in 380ms var(--e-spring-soft) both;
 }
 @keyframes palette-modal-in {
-  from { opacity: 0; transform: translate3d(0, -16px, 0) scale(0.96); border-radius: 38px; }
+  from { opacity: 0; transform: translate3d(0, -16px, 0) scale(0.96); }
   to { opacity: 1; transform: none; }
 }
 @keyframes palette-modal-out {
@@ -2243,7 +2253,7 @@ body.dragging-panel * {
 
 .palette-kbd {
   padding: 2px 7px;
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   font-family: var(--font-mono);
   font-size: 11px;
   background: var(--ui-surface-container);
@@ -2310,7 +2320,7 @@ body.dragging-panel * {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-xs);
   background: var(--ui-surface-container-low);
   color: var(--ui-on-surface-variant);
   flex: none;
@@ -2329,7 +2339,7 @@ body.dragging-panel * {
   font-family: var(--font-mono);
   font-size: 11px;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--r-xs);
   background: var(--ui-surface-container-lowest);
   border: 1px solid var(--ui-outline-variant);
   color: var(--ui-on-surface-variant);
@@ -2879,14 +2889,11 @@ body.dragging-panel * {
   position: fixed;
   z-index: 900;
   min-width: 224px;
-  padding: 5px;
-  border-radius: var(--r-md);
-  /* Menu nổi trên *nội dung panel*, không trên ảnh nền — nên không có ảnh mờ sẵn nào dùng
-     được ở đây, và làm mờ thật thì phải chạy lại theo từng khung hình của terminal bên dưới.
-     Material 3 vốn dựng menu bằng một surface đục; đó cũng là phương án rẻ nhất. */
+  padding: 4px;
+  border-radius: var(--r-xs);
   background: var(--ui-surface-container-high);
-  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 45%, transparent);
-  box-shadow: 0 12px 34px rgb(0 0 0 / 0.34);
+  border: 1px solid var(--ui-outline-variant);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -2894,7 +2901,7 @@ body.dragging-panel * {
 }
 
 @keyframes ctx-in {
-  from { opacity: 0; transform: translate3d(0, -7px, 0) scale(0.97); border-radius: var(--r-xl); }
+  from { opacity: 0; transform: translate3d(0, -7px, 0) scale(0.97); }
   to   { opacity: 1; transform: none; }
 }
 
@@ -3188,7 +3195,7 @@ body.dragging-panel * {
 
 .ai-code-block {
   margin: 10px 0;
-  border-radius: 8px;
+  border-radius: var(--r-xs);
   background: var(--ui-surface-container-high);
   border: 1px solid var(--ui-outline-variant);
   overflow: hidden;
@@ -3221,7 +3228,7 @@ body.dragging-panel * {
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   border: 1px solid var(--ui-outline-variant);
   background: var(--ui-surface-container-low);
   color: var(--ui-on-surface);

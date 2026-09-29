@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Hyprland / i3wm-inspired Industrial Minimalist Design Utilities
+   ========================================================================== */
+@layer utilities {
+  /* Vát góc 45 độ (Chamfer Cut) đồng bộ theo khối Origami BB */
+  .chamfer-tr {
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  }
+  .chamfer-all {
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+  }
+  .chamfer-tl {
+    clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px);
+  }
+  .chamfer-br {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+  }
+  .chamfer-bl {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  }
+}
