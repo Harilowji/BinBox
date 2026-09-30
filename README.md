@@ -13,8 +13,8 @@
 
   <br />
 
-  <a href="#-download--installation">
-    <img src="https://img.shields.io/badge/⚡_Download_BinBox_Studio_for_Windows-2563eb?style=for-the-badge&logo=windows11&logoColor=white" height="38" alt="Download BinBox Studio for Windows" />
+  <a href="https://github.com/Harilowji/BinBox/releases/latest">
+    <img src="https://img.shields.io/badge/⚡_Download_BinBox_Studio_v0.2.3-2563eb?style=for-the-badge&logo=windows11&logoColor=white" height="38" alt="Download BinBox Studio v0.2.3" />
   </a>
   <a href="https://github.com/Harilowji/BinBox/releases">
     <img src="https://img.shields.io/badge/All_Releases-475569?style=for-the-badge&logo=github&logoColor=white" height="38" alt="All Releases" />
@@ -39,15 +39,15 @@ BinBox Studio is available as a standalone desktop application for Windows 10 an
 
 | Package | Format | Architecture | Download Link |
 | :--- | :---: | :---: | :--- |
-| **BinBox Studio Setup (Recommended)** | `.exe` | x64 | [**Download `BinBox.Studio_0.2.1_x64-setup.exe`**](https://github.com/Harilowji/BinBox/releases/latest/download/BinBox.Studio_0.2.1_x64-setup.exe) |
-| **Windows MSI Installer** | `.msi` | x64 | [**Download `BinBox.Studio_0.2.1_x64_en-US.msi`**](https://github.com/Harilowji/BinBox/releases/latest/download/BinBox.Studio_0.2.1_x64_en-US.msi) |
-| **All Releases & Release Notes** | Release Page | x64 | [**View GitHub Releases**](https://github.com/Harilowji/BinBox/releases) |
+| **BinBox Studio Setup (Recommended)** | `.exe` | x64 | [**Download `BinBox.Studio_0.2.3_x64-setup.exe`**](https://github.com/Harilowji/BinBox/releases/download/v0.2.3/BinBox.Studio_0.2.3_x64-setup.exe) |
+| **Windows MSI Installer** | `.msi` | x64 | [**Download `BinBox.Studio_0.2.3_x64_en-US.msi`**](https://github.com/Harilowji/BinBox/releases/download/v0.2.3/BinBox.Studio_0.2.3_x64_en-US.msi) |
+| **All Releases & Release Notes** | Release Page | x64 | [**View GitHub Releases (v0.2.3)**](https://github.com/Harilowji/BinBox/releases/tag/v0.2.3) |
 
 ### ⚡ One-Liner Install via PowerShell:
 You can download and launch the latest BinBox Studio installer directly using PowerShell:
 
 ```powershell
-Invoke-WebRequest -Uri "https://github.com/Harilowji/BinBox/releases/latest/download/BinBox.Studio_0.2.1_x64-setup.exe" -OutFile "$env:TEMP\BinBoxStudio-Setup.exe"; Start-Process "$env:TEMP\BinBoxStudio-Setup.exe"
+Invoke-WebRequest -Uri "https://github.com/Harilowji/BinBox/releases/download/v0.2.3/BinBox.Studio_0.2.3_x64-setup.exe" -OutFile "$env:TEMP\BinBoxStudio-Setup.exe"; Start-Process "$env:TEMP\BinBoxStudio-Setup.exe"
 ```
 
 > **Requirements:**
