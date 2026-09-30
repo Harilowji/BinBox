@@ -7,6 +7,7 @@ import { check as checkForUpdate, type Update } from "@tauri-apps/plugin-updater
 import { relaunch } from "@tauri-apps/plugin-process";
 import { useBackgroundStore, type WeWallpaperInfo } from "../store/settings";
 import {
+  COLOR_PRESETS,
   TERM_OPACITY_MAX,
   TERM_OPACITY_MIN,
   type ColorSource,
@@ -18,13 +19,14 @@ import {
 const SCHEMES: SchemeName[] = ["TonalSpot", "Vibrant", "Expressive", "Neutral", "Content", "Monochrome"];
 
 const SOURCES: { id: ColorSource; name: string; icon: IconName; hint: string }[] = [
-  { id: "brand", name: "BinBox Studio", icon: "shapes", hint: "Dark minimalist monochrome from the logo." },
-  { id: "wallpaper", name: "Wallpaper", icon: "wallpaper", hint: "Colors read from your wallpaper." },
+  { id: "brand", name: "BinBox Monochrome", icon: "shapes", hint: "Dark minimalist monochrome brand theme." },
+  { id: "preset", name: "Curated Presets", icon: "palette", hint: "Sameko-inspired curated color presets." },
+  { id: "wallpaper", name: "Wallpaper Sync", icon: "wallpaper", hint: "Colors dynamically extracted from desktop wallpaper." },
 ];
 
 const SURFACES: { id: SurfaceStyle; name: string; icon: IconName; hint: string }[] = [
-  { id: "flat", name: "Flat", icon: "square", hint: "Solid surfaces, no blur." },
-  { id: "glass", name: "Glass", icon: "layers", hint: "Translucent — wallpaper shows through." },
+  { id: "flat", name: "Flat", icon: "square", hint: "Solid surfaces, zero blur, maximum performance." },
+  { id: "glass", name: "Cyber Glass", icon: "layers", hint: "Translucent frosted glass with background refraction." },
 ];
 
 const LAYOUTS: { id: LayoutMode; name: string; icon: IconName; hint: string }[] = [
@@ -50,16 +52,16 @@ const KEYS: { keys: string[]; what: string }[] = [
   { keys: ["Ctrl", "↑ / ↓"], what: "Jump between commands" },
 ];
 
-type Page = "appearance" | "terminal" | "layout" | "keys" | "updates";
+type Page = "display" | "colors" | "terminal" | "workspace" | "shortcuts";
 
 type UpdateState = "idle" | "checking" | "none" | "available" | "downloading" | "installed" | "error";
 
 const PAGES: { id: Page; label: string; blurb: string; icon: IconName }[] = [
-  { id: "appearance", label: "Appearance", blurb: "Color, surface, wallpaper.", icon: "palette" },
-  { id: "terminal", label: "Terminal", blurb: "Opacity, contrast, scrollback.", icon: "terminal" },
-  { id: "layout", label: "Layout", blurb: "How new panels split.", icon: "grid_view" },
-  { id: "keys", label: "Shortcuts", blurb: "Keys BinBox Studio takes before the shell.", icon: "keyboard" },
-  { id: "updates", label: "Updates", blurb: "Check for a newer build.", icon: "refresh" },
+  { id: "display", label: "Display & Wallpaper", blurb: "Surface, Wallpaper Engine, overlay dim and blur.", icon: "wallpaper" },
+  { id: "colors", label: "Colors & Presets", blurb: "Curated presets, Material You palette, contrast.", icon: "palette" },
+  { id: "terminal", label: "Terminal", blurb: "Opacity, font size, cursor style, scrollback.", icon: "terminal" },
+  { id: "workspace", label: "Workspace", blurb: "Tiling split modes, dock anti-occlusion, autohide.", icon: "grid_view" },
+  { id: "shortcuts", label: "Shortcuts & About", blurb: "Keybindings, update checker, version info.", icon: "keyboard" },
 ];
 
 type Props = { onClose: () => void };
@@ -81,7 +83,7 @@ export function SettingsModal({ onClose }: Props) {
   const setWeInfo = useBackgroundStore((s) => s.setWeInfo);
   const setWeConnected = useBackgroundStore((s) => s.setWeConnected);
   const setWeError = useBackgroundStore((s) => s.setWeError);
-  const [page, setPage] = useState<Page>("appearance");
+  const [page, setPage] = useState<Page>("display");
   const [logoMissing, setLogoMissing] = useState(false);
   const [appVersion, setAppVersion] = useState("");
   const [updateState, setUpdateState] = useState<UpdateState>("idle");
@@ -248,65 +250,9 @@ export function SettingsModal({ onClose }: Props) {
           </header>
 
           <div className="set-scroll">
-            {page === "appearance" && (
+            {page === "display" && (
               <>
-                <div className="set-tone-preview" aria-label={`Current Material You scheme: ${opts.scheme}`}>
-                  <span className="set-tone-copy">
-                    <small>Material You palette</small>
-                    <strong>{opts.scheme}</strong>
-                  </span>
-                  <span className="set-tone-cluster" aria-hidden="true">
-                    <i className="primary" />
-                    <i className="secondary" />
-                    <i className="tertiary" />
-                    <i className="surface" />
-                  </span>
-                </div>
-
-                <Group label="Color palette">
-                  <div className="set-grid cols-2">
-                    {SOURCES.map((item) => (
-                      <OptionCard
-                        key={item.id}
-                        icon={item.icon}
-                        label={item.name}
-                        hint={item.hint}
-                        active={opts.colorSource === item.id}
-                        onClick={() => setOpts({ colorSource: item.id })}
-                      />
-                    ))}
-                  </div>
-                  {/* Duong dan day du keo vien trang thai dai gan het chieu ngang, bien mot
-                      chu thich thanh mot khoi chu. Chi ten tep o day; ban day du trong tooltip. */}
-                  <div className="set-status" title={source === "wallpaper" ? wallpaper : undefined}>
-                    <span className={source === "fallback" ? "source-dot" : "source-dot live"} />
-                    {opts.colorSource === "brand"
-                      ? "BinBox Studio brand colors"
-                      : source === "wallpaper"
-                        ? wallpaper ? `From ${fileName(wallpaper)}` : "From your wallpaper"
-                        : "Fallback — wallpaper unreadable"}
-                  </div>
-
-                  {/* Phong cách màu và nút đồng bộ chỉ có nghĩa khi màu thật sự đến từ ảnh nền. */}
-                  {opts.colorSource === "wallpaper" && (
-                    <>
-                      <div className="set-chips">
-                        {SCHEMES.map((scheme) => (
-                          <button
-                            key={scheme}
-                            className={"set-chip" + (opts.scheme === scheme ? " on" : "")}
-                            onClick={() => setOpts({ scheme })}
-                          >
-                            {scheme}
-                          </button>
-                        ))}
-                      </div>
-                      <ActionRow icon={<Icon name="refresh" size={22} />} label="Sync wallpaper" note="Re-read colors after changing wallpaper." action="Refresh" onClick={() => refreshSeed()} />
-                    </>
-                  )}
-                </Group>
-
-                <Group label="Surface">
+                <Group label="Surface Style">
                   <div className="set-grid cols-2">
                     {SURFACES.map((item) => (
                       <OptionCard
@@ -321,40 +267,38 @@ export function SettingsModal({ onClose }: Props) {
                   </div>
                 </Group>
 
-                <Group label="Background (Quản lý nền hợp nhất)">
-                  {/* Segmented Control cho 3 chế độ: Solid | Ảnh cá nhân | Wallpaper Engine */}
+                <Group label="Unified Background Provider">
                   <div className="set-grid cols-3">
                     <OptionCard
                       icon="square"
-                      label="Solid (Mặc định)"
-                      hint="Nền đen thương hiệu tối giản, 0.0% GPU"
+                      label="Solid (Brand Black)"
+                      hint="Minimalist brand black surface, 0.0% GPU."
                       active={bgSettings.mode === "solid"}
                       onClick={() => setBgMode("solid")}
                     />
                     <OptionCard
                       icon="wallpaper"
-                      label="Ảnh cá nhân"
-                      hint="Chọn ảnh tĩnh từ máy tính (.png, .jpg, .webp)"
+                      label="Custom Image"
+                      hint="Load static background image (.png, .jpg, .webp)."
                       active={bgSettings.mode === "custom_image"}
                       onClick={() => setBgMode("custom_image")}
                     />
                     <OptionCard
                       icon="refresh"
                       label="Wallpaper Engine"
-                      hint="Tự động đồng bộ với Wallpaper Engine đang chạy"
+                      hint="Auto-sync with active Wallpaper Engine instance."
                       active={bgSettings.mode === "wallpaper_engine"}
                       onClick={() => setBgMode("wallpaper_engine")}
                     />
                   </div>
 
-                  {/* Khi chọn 'custom_image' */}
                   {bgSettings.mode === "custom_image" && (
                     <>
                       <ActionRow
                         icon={<Icon name="add_photo_alternate" size={22} />}
-                        label="Ảnh nền tùy chọn"
-                        note={bgSettings.customImagePath ? fileName(bgSettings.customImagePath) : "Chưa chọn file ảnh nào."}
-                        action={bgSettings.customImagePath ? "Đổi ảnh" : "Chọn ảnh"}
+                        label="Custom background image"
+                        note={bgSettings.customImagePath ? fileName(bgSettings.customImagePath) : "No image selected."}
+                        action={bgSettings.customImagePath ? "Change image" : "Choose image"}
                         onClick={() => {
                           invoke<string | null>("wallpaper_pick")
                             .then((path) => {
@@ -368,32 +312,31 @@ export function SettingsModal({ onClose }: Props) {
                       {bgSettings.customImagePath && (
                         <ActionRow
                           icon={<Icon name="undo" size={22} />}
-                          label="Xóa ảnh tùy chọn"
-                          note="Quay về nền mặc định"
-                          action="Xóa"
+                          label="Reset custom image"
+                          note="Return to default brand background."
+                          action="Reset"
                           onClick={() => setCustomImage(null)}
                         />
                       )}
                     </>
                   )}
 
-                  {/* Khi chọn 'wallpaper_engine' */}
                   {bgSettings.mode === "wallpaper_engine" && (
                     <>
                       <div className="set-status" title={weInfo?.media_path || undefined}>
                         <span className={weConnected ? "source-dot live" : "source-dot"} />
                         {weConnected
-                          ? `Đã kết nối: ${weInfo?.title || (weInfo?.media_path ? fileName(weInfo.media_path) : "Wallpaper Engine")} (${weInfo?.wallpaper_type || "WE"})`
+                          ? `Connected: ${weInfo?.title || (weInfo?.media_path ? fileName(weInfo.media_path) : "Wallpaper Engine")} (${weInfo?.wallpaper_type || "WE"})`
                           : weError
-                            ? `Chưa kết nối: ${weError}`
-                            : "Đang tìm kiếm Wallpaper Engine trên máy..."}
+                            ? `Disconnected: ${weError}`
+                            : "Scanning for Wallpaper Engine on system..."}
                       </div>
 
                       <div className="set-grid cols-1">
                         <OptionCard
                           icon="palette"
-                          label="Đồng bộ bảng màu HCT theo Wallpaper"
-                          hint="Tự động trích xuất bảng màu Material 3 khi wallpaper thay đổi"
+                          label="Sync HCT Palette with Wallpaper"
+                          hint="Automatically extract M3 color palette on wallpaper update."
                           active={bgSettings.weSyncColors}
                           onClick={() => setWeSyncColors(!bgSettings.weSyncColors)}
                         />
@@ -401,9 +344,9 @@ export function SettingsModal({ onClose }: Props) {
 
                       <ActionRow
                         icon={<Icon name="refresh" size={22} />}
-                        label="Quét lại kết nối"
-                        note="Kiểm tra lại wallpaper đang kích hoạt trong Wallpaper Engine"
-                        action="Quét lại"
+                        label="Rescan Connection"
+                        note="Check active Wallpaper Engine wallpaper state."
+                        action="Rescan"
                         onClick={() => {
                           invoke<WeWallpaperInfo | null>("we_get_current")
                             .then((info) => {
@@ -420,14 +363,13 @@ export function SettingsModal({ onClose }: Props) {
                     </>
                   )}
 
-                  {/* Hai thanh trượt Slider: Độ tối lớp phủ (Dim) và Độ mờ hậu cảnh (Blur) */}
                   {bgSettings.mode !== "solid" && (
                     <>
                       <Slider
                         id="bg-dim-opacity"
                         icon={<Icon name="opacity" size={22} />}
-                        label="Độ tối lớp phủ (Dim)"
-                        note="Lớp phủ tối giúp nổi bật văn bản terminal"
+                        label="Dim Opacity"
+                        note="Dark scrim overlay to enhance terminal legibility."
                         min={0}
                         max={0.9}
                         step={0.05}
@@ -438,8 +380,8 @@ export function SettingsModal({ onClose }: Props) {
                       <Slider
                         id="bg-blur-radius"
                         icon={<Icon name="blur_on" size={22} />}
-                        label="Độ mờ hậu cảnh (Blur)"
-                        note="Làm mờ hậu cảnh để tăng độ tập trung"
+                        label="Blur Radius"
+                        note="Backdrop blur for focus and depth."
                         min={0}
                         max={20}
                         step={1}
@@ -451,7 +393,33 @@ export function SettingsModal({ onClose }: Props) {
                   )}
                 </Group>
 
-                <Group label="Sysfetch logo">
+                <Group label="Chrome Display">
+                  <div className="set-grid cols-3">
+                    <OptionCard
+                      icon="dark_mode"
+                      label="Dark theme"
+                      hint="Tuned for long coding sessions."
+                      active={opts.dark}
+                      onClick={() => setOpts({ dark: !opts.dark })}
+                    />
+                    <OptionCard
+                      icon="gradient"
+                      label="Mica / Acrylic"
+                      hint="Blend wallpaper into native window frame."
+                      active={opts.windowVibrancy !== false}
+                      onClick={() => setOpts({ windowVibrancy: !(opts.windowVibrancy !== false) })}
+                    />
+                    <OptionCard
+                      icon="blur_on"
+                      label="Blur surfaces"
+                      hint="Turn off for higher rendering FPS."
+                      active={opts.blurEffects !== false}
+                      onClick={() => setOpts({ blurEffects: !(opts.blurEffects !== false) })}
+                    />
+                  </div>
+                </Group>
+
+                <Group label="Sysfetch Logo">
                   <ActionRow
                     icon={<Icon name="add_photo_alternate" size={22} />}
                     label="Logo image"
@@ -470,81 +438,318 @@ export function SettingsModal({ onClose }: Props) {
                     }}
                   />
                   {opts.sysfetchLogoPath && (
-                    <ActionRow icon={<Icon name="undo" size={22} />} label="Restore text logo" note="Back to the text logo." action="Restore" onClick={() => setOpts({ sysfetchLogoPath: "" })} />
+                    <ActionRow
+                      icon={<Icon name="undo" size={22} />}
+                      label="Restore text logo"
+                      note="Back to the text logo."
+                      action="Restore"
+                      onClick={() => setOpts({ sysfetchLogoPath: "" })}
+                    />
                   )}
                 </Group>
+              </>
+            )}
 
-                <Group label="Chrome">
+            {page === "colors" && (
+              <>
+                <div
+                  className="set-tone-preview"
+                  aria-label={`Current color scheme: ${
+                    opts.colorSource === "preset"
+                      ? (COLOR_PRESETS.find((p) => p.id === opts.colorPreset)?.name ?? opts.scheme)
+                      : opts.scheme
+                  }`}
+                >
+                  <span className="set-tone-copy">
+                    <small>Color Palette Engine</small>
+                    <strong>
+                      {opts.colorSource === "preset"
+                        ? (COLOR_PRESETS.find((p) => p.id === opts.colorPreset)?.name ?? opts.scheme)
+                        : opts.colorSource === "brand"
+                          ? "BinBox Monochrome"
+                          : opts.scheme}
+                    </strong>
+                  </span>
+                  <span className="set-tone-cluster" aria-hidden="true">
+                    <i className="primary" />
+                    <i className="secondary" />
+                    <i className="tertiary" />
+                    <i className="surface" />
+                  </span>
+                </div>
+
+                <Group label="Color Source">
                   <div className="set-grid cols-3">
-                    <OptionCard icon="web_asset" label="Top bar auto-hide" hint="Reveal at the top edge." active={opts.navAutoHide} onClick={() => setOpts({ navAutoHide: !opts.navAutoHide })} />
-                    <OptionCard icon="bottom_panel_open" label="Dock auto-hide" hint="Reveal at the bottom edge." active={opts.dockAutoHide} onClick={() => setOpts({ dockAutoHide: !opts.dockAutoHide })} />
-                    <OptionCard icon="dark_mode" label="Dark theme" hint="Tuned for long sessions." active={opts.dark} onClick={() => setOpts({ dark: !opts.dark })} />
-                    <OptionCard icon="gradient" label="Mica / Acrylic" hint="Blend wallpaper into the window." active={opts.windowVibrancy !== false} onClick={() => setOpts({ windowVibrancy: !(opts.windowVibrancy !== false) })} />
-                    <OptionCard icon="blur_on" label="Blur surfaces" hint="Turn off for more FPS." active={opts.blurEffects !== false} onClick={() => setOpts({ blurEffects: !(opts.blurEffects !== false) })} />
+                    {SOURCES.map((item) => (
+                      <OptionCard
+                        key={item.id}
+                        icon={item.icon}
+                        label={item.name}
+                        hint={item.hint}
+                        active={opts.colorSource === item.id}
+                        onClick={() => setOpts({ colorSource: item.id })}
+                      />
+                    ))}
                   </div>
+                </Group>
+
+                {opts.colorSource === "preset" && (
+                  <Group label="Curated Presets (Sameko-Inspired)">
+                    <div className="set-grid preset-grid">
+                      {COLOR_PRESETS.map((p) => {
+                        const active = opts.colorPreset === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className={"preset-card" + (active ? " on" : "")}
+                            onClick={() =>
+                              setOpts({ colorSource: "preset", colorPreset: p.id, scheme: p.scheme })
+                            }
+                            title={p.description}
+                            aria-pressed={active}
+                          >
+                            <span className="preset-swatch" style={{ background: p.hex }} />
+                            <span className="set-card-label">{p.name}</span>
+                            <span className="set-card-hint">{p.description}</span>
+                            {active && (
+                              <span className="set-card-state" aria-hidden="true">
+                                <Icon name="check" size={17} filled />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Group>
+                )}
+
+                {opts.colorSource === "wallpaper" && (
+                  <Group label="Wallpaper Palette">
+                    <div className="set-status" title={source === "wallpaper" ? wallpaper : undefined}>
+                      <span className={source === "fallback" ? "source-dot" : "source-dot live"} />
+                      {source === "wallpaper"
+                        ? wallpaper
+                          ? `From ${fileName(wallpaper)}`
+                          : "From your wallpaper"
+                        : "Fallback — wallpaper unreadable"}
+                    </div>
+
+                    <div className="set-chips">
+                      {SCHEMES.map((scheme) => (
+                        <button
+                          key={scheme}
+                          className={"set-chip" + (opts.scheme === scheme ? " on" : "")}
+                          onClick={() => setOpts({ scheme })}
+                        >
+                          {scheme}
+                        </button>
+                      ))}
+                    </div>
+
+                    <ActionRow
+                      icon={<Icon name="refresh" size={22} />}
+                      label="Sync wallpaper"
+                      note="Re-read colors after changing desktop wallpaper."
+                      action="Refresh"
+                      onClick={() => refreshSeed()}
+                    />
+                  </Group>
+                )}
+
+                <Group label="Color Calibration">
+                  <Slider
+                    id="set-contrast"
+                    icon={<Icon name="contrast" size={22} />}
+                    label="Contrast"
+                    note="0 is the Material 3 baseline."
+                    min={-1}
+                    max={1}
+                    step={0.1}
+                    value={opts.contrast}
+                    display={opts.contrast.toFixed(1)}
+                    onChange={(v) => setOpts({ contrast: v })}
+                  />
+                  <Slider
+                    id="set-harmonize"
+                    icon={<Icon name="palette" size={22} />}
+                    label="ANSI Harmonize"
+                    note="Ties ANSI hues closer to the theme seed."
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={opts.harmonize}
+                    display={`${Math.round(opts.harmonize * 100)}%`}
+                    onChange={(v) => setOpts({ harmonize: v })}
+                  />
                 </Group>
               </>
             )}
 
             {page === "terminal" && (
-              <Group label="Surface">
-                <Slider
-                  id="set-opacity"
-                  icon={<Icon name="opacity" size={22} />}
-                  label="Opacity"
-                  note={opts.surfaceStyle === "flat" ? "Flat surfaces are always opaque." : "Lower values reveal more of the wallpaper."}
-                  disabled={opts.surfaceStyle === "flat"}
-                  min={TERM_OPACITY_MIN * 100}
-                  max={TERM_OPACITY_MAX * 100}
-                  step={1}
-                  value={opts.surfaceStyle === "flat" ? 100 : Math.round(opts.termOpacity * 100)}
-                  display={opts.surfaceStyle === "flat" ? "100%" : `${Math.round(opts.termOpacity * 100)}%`}
-                  onChange={(v) => setOpts({ termOpacity: v / 100 })}
-                />
-                <Slider id="set-contrast" icon={<Icon name="contrast" size={22} />} label="Contrast" note="0 is the Material 3 baseline." min={-1} max={1} step={0.1} value={opts.contrast} display={opts.contrast.toFixed(1)} onChange={(v) => setOpts({ contrast: v })} />
-                <Slider id="set-chroma" icon={<Icon name="palette" size={22} />} label="ANSI chroma" note="Saturation of terminal colors." min={1} max={2.5} step={0.05} value={opts.termChroma} display={`${opts.termChroma.toFixed(2)}×`} onChange={(v) => setOpts({ termChroma: v })} />
-                <Slider
-                  id="set-scrollback"
-                  icon={<Icon name="terminal" size={22} />}
-                  label="Scrollback"
-                  note="Lower values cap memory growth."
-                  min={1000}
-                  max={20000}
-                  step={1000}
-                  value={opts.terminalScrollback}
-                  display={`${Math.round(opts.terminalScrollback / 1000)}k lines`}
-                  onChange={(v) => setOpts({ terminalScrollback: v })}
-                />
-              </Group>
-            )}
-
-            {page === "layout" && (
-              <Group label="New panels">
-                <div className="set-grid cols-3">
-                  {LAYOUTS.map((layout) => (
-                    <OptionCard
-                      key={layout.id}
-                      icon={layout.icon}
-                      label={layout.name}
-                      hint={layout.hint}
-                      active={opts.layoutMode === layout.id}
-                      onClick={() => setOpts({ layoutMode: layout.id })}
-                    />
-                  ))}
-                </div>
-                <div className="set-tip">Drag a panel header to move it. Use ‹ › to switch panels.</div>
-              </Group>
-            )}
-
-            {page === "keys" && (
               <>
-                <Group label="Key priority">
-                  <div className="set-grid cols-2">
-                    <OptionCard icon="tab" label="Tab-style panels" hint="Ctrl+T and Ctrl+W open and close panels like browser tabs." active={opts.tabShortcuts} onClick={() => setOpts({ tabShortcuts: !opts.tabShortcuts })} />
-                    <OptionCard icon="tag" label="Workspace shortcuts" hint="Alt+1…9 switches; Alt+T/W creates or closes." active={opts.workspaceAltKeys} onClick={() => setOpts({ workspaceAltKeys: !opts.workspaceAltKeys })} />
+                <Group label="Surface & Font">
+                  <Slider
+                    id="set-opacity"
+                    icon={<Icon name="opacity" size={22} />}
+                    label="Opacity"
+                    note={
+                      opts.surfaceStyle === "flat"
+                        ? "Flat surfaces are always opaque."
+                        : "Lower values reveal more of the background."
+                    }
+                    disabled={opts.surfaceStyle === "flat"}
+                    min={TERM_OPACITY_MIN * 100}
+                    max={TERM_OPACITY_MAX * 100}
+                    step={1}
+                    value={opts.surfaceStyle === "flat" ? 100 : Math.round(opts.termOpacity * 100)}
+                    display={opts.surfaceStyle === "flat" ? "100%" : `${Math.round(opts.termOpacity * 100)}%`}
+                    onChange={(v) => setOpts({ termOpacity: v / 100 })}
+                  />
+                  <Slider
+                    id="set-font-size"
+                    icon={<Icon name="code" size={22} />}
+                    label="Font Size"
+                    note="Terminal text glyph size in pixels."
+                    min={11}
+                    max={20}
+                    step={1}
+                    value={opts.terminalFontSize ?? 13}
+                    display={`${opts.terminalFontSize ?? 13}px`}
+                    onChange={(v) => setOpts({ terminalFontSize: v })}
+                  />
+                </Group>
+
+                <Group label="Cursor Style">
+                  <div className="set-segmented">
+                    {(["block", "underline", "bar"] as const).map((style) => (
+                      <button
+                        key={style}
+                        type="button"
+                        className={(opts.terminalCursorStyle ?? "block") === style ? "on" : ""}
+                        onClick={() => setOpts({ terminalCursorStyle: style })}
+                      >
+                        {style.toUpperCase()}
+                      </button>
+                    ))}
                   </div>
                 </Group>
-                <Group label="Shortcut list">
+
+                <Group label="ANSI Chroma & Buffer">
+                  <Slider
+                    id="set-chroma"
+                    icon={<Icon name="palette" size={22} />}
+                    label="ANSI chroma"
+                    note="Saturation of terminal colors."
+                    min={1}
+                    max={2.5}
+                    step={0.05}
+                    value={opts.termChroma}
+                    display={`${opts.termChroma.toFixed(2)}x`}
+                    onChange={(v) => setOpts({ termChroma: v })}
+                  />
+                  <Slider
+                    id="set-scrollback"
+                    icon={<Icon name="terminal" size={22} />}
+                    label="Scrollback"
+                    note="Lower values cap memory growth."
+                    min={1000}
+                    max={20000}
+                    step={1000}
+                    value={opts.terminalScrollback}
+                    display={`${Math.round(opts.terminalScrollback / 1000)}k lines`}
+                    onChange={(v) => setOpts({ terminalScrollback: v })}
+                  />
+                </Group>
+              </>
+            )}
+
+            {page === "workspace" && (
+              <>
+                <Group label="Tiling Split Mode">
+                  <div className="set-grid cols-3">
+                    {LAYOUTS.map((layout) => (
+                      <OptionCard
+                        key={layout.id}
+                        icon={layout.icon}
+                        label={layout.name}
+                        hint={layout.hint}
+                        active={opts.layoutMode === layout.id}
+                        onClick={() => setOpts({ layoutMode: layout.id })}
+                      />
+                    ))}
+                  </div>
+                  <div className="set-tip">Drag a panel header to move it. Use Ctrl+Tab or arrow keys to switch panels.</div>
+                </Group>
+
+                <Group label="Dock & Navigation">
+                  <div className="set-grid cols-3">
+                    <OptionCard
+                      icon="bolt"
+                      label="Dock Anti-Occlusion (Ghost Mode)"
+                      hint="Fades dock to 12% opacity during typing and preserves safe terminal bottom padding."
+                      active={opts.dockAntiOcclusion !== false}
+                      onClick={() => setOpts({ dockAntiOcclusion: !(opts.dockAntiOcclusion !== false) })}
+                    />
+                    <OptionCard
+                      icon="bottom_panel_open"
+                      label="Dock auto-hide"
+                      hint="Reveal dock at the bottom screen edge."
+                      active={opts.dockAutoHide}
+                      onClick={() => setOpts({ dockAutoHide: !opts.dockAutoHide })}
+                    />
+                    <OptionCard
+                      icon="web_asset"
+                      label="Top bar auto-hide"
+                      hint="Reveal top navigation at the top screen edge."
+                      active={opts.navAutoHide}
+                      onClick={() => setOpts({ navAutoHide: !opts.navAutoHide })}
+                    />
+                  </div>
+                </Group>
+              </>
+            )}
+
+            {page === "shortcuts" && (
+              <>
+                <Group label="BinBox Studio Build">
+                  <ActionRow
+                    icon={<Icon name="download" size={22} />}
+                    label={`BinBox Studio ${appVersion || "..."}`}
+                    note={updateNote(updateState, updateInfo, updateError)}
+                    action={
+                      updateState === "checking"
+                        ? "Checking..."
+                        : updateState === "downloading"
+                          ? "Installing..."
+                          : updateState === "available"
+                            ? "Install & Restart"
+                            : "Check for updates"
+                    }
+                    onClick={updateState === "available" ? handleInstallUpdate : handleCheckForUpdate}
+                  />
+                </Group>
+
+                <Group label="Key Priority">
+                  <div className="set-grid cols-2">
+                    <OptionCard
+                      icon="tab"
+                      label="Tab-style panels"
+                      hint="Ctrl+T and Ctrl+W open and close panels like browser tabs."
+                      active={opts.tabShortcuts}
+                      onClick={() => setOpts({ tabShortcuts: !opts.tabShortcuts })}
+                    />
+                    <OptionCard
+                      icon="tag"
+                      label="Workspace shortcuts"
+                      hint="Alt+1...9 switches; Alt+T/W creates or closes workspace."
+                      active={opts.workspaceAltKeys}
+                      onClick={() => setOpts({ workspaceAltKeys: !opts.workspaceAltKeys })}
+                    />
+                  </div>
+                </Group>
+
+                <Group label="Keyboard Shortcuts">
                   <div className="set-keylist">
                     {KEYS.map((item) => (
                       <div className="set-key" key={item.keys.join("+")}>
@@ -557,26 +762,6 @@ export function SettingsModal({ onClose }: Props) {
                   </div>
                 </Group>
               </>
-            )}
-
-            {page === "updates" && (
-              <Group label="Version">
-                <ActionRow
-                  icon={<Icon name="download" size={22} />}
-                  label={`BinBox Studio ${appVersion || "…"}`}
-                  note={updateNote(updateState, updateInfo, updateError)}
-                  action={
-                    updateState === "checking"
-                      ? "Checking…"
-                      : updateState === "downloading"
-                        ? "Installing…"
-                        : updateState === "available"
-                          ? "Install & Restart"
-                          : "Check for updates"
-                  }
-                  onClick={updateState === "available" ? handleInstallUpdate : handleCheckForUpdate}
-                />
-              </Group>
             )}
           </div>
         </div>

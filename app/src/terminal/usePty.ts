@@ -8,6 +8,7 @@ import type { ITheme } from "@xterm/xterm";
 import { registerFileLinkProvider } from "./links";
 import { Osc133Tracker, type CommandBlock } from "./osc133";
 import { useSessions } from "../store/sessions";
+import { notifyTerminalTyping } from "../dock/dockState";
 
 export type PtyState = "starting" | "running" | "exited" | "error";
 
@@ -42,6 +43,7 @@ export type PtyOptions = {
   /** Font terminal — chốt theo font thật có trên máy, không phải font tưởng tượng. */
   fontFamily?: string;
   fontSize?: number;
+  cursorStyle?: "block" | "underline" | "bar";
   /** Bảng màu sinh từ ảnh nền (phase 03). Đổi lúc đang chạy được. */
   theme?: ITheme;
   /** Khoá panel — chỉ dùng để biết có nên giành focus lúc mở hay không. */
@@ -97,6 +99,7 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
         '"CaskaydiaCove Nerd Font","Cascadia Mono",Consolas,monospace',
       fontSize: opts.fontSize ?? 15,
       cursorBlink: true,
+      cursorStyle: opts.cursorStyle ?? "block",
       scrollback: normalizeScrollback(opts.scrollback),
       // Cả 16 màu ANSI đều sinh từ ảnh nền, chroma đã nhân 1,7 lần so với chrome (U3).
       theme: opts.theme,
@@ -187,6 +190,7 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
 
     // Gắn TRƯỚC khi spawn. Xem chú thích trên.
     term.onData((d) => {
+      notifyTerminalTyping();
       const bytes = new TextEncoder().encode(d);
       for (let i = 0; i < bytes.length; i++) pendingIn.push(bytes[i]);
       flush();
@@ -451,6 +455,14 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
   useEffect(() => {
     if (termRef.current) termRef.current.options.scrollback = normalizeScrollback(opts.scrollback);
   }, [opts.scrollback]);
+
+  useEffect(() => {
+    if (termRef.current && opts.fontSize) termRef.current.options.fontSize = opts.fontSize;
+  }, [opts.fontSize]);
+
+  useEffect(() => {
+    if (termRef.current && opts.cursorStyle) termRef.current.options.cursorStyle = opts.cursorStyle;
+  }, [opts.cursorStyle]);
 
   const copyLastOutput = () => {
     if (!trackerRef.current) return;

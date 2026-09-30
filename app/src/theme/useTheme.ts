@@ -12,6 +12,7 @@ import { Score } from "@material/material-color-utilities";
 import { quantizeCelebiStable } from "./quantize";
 import {
   BRAND_TEAL,
+  COLOR_PRESETS,
   DEFAULTS,
   FALLBACK_SEED,
   accentVars,
@@ -44,7 +45,7 @@ type ThemeStore = {
    * Màu gốc đang lấy từ đâu — để UI settings nói rõ thay vì im lặng.
    * `brand` nghĩa là không đọc ảnh nền chút nào, màu lấy thẳng từ logo.
    */
-  source: "wallpaper" | "fallback" | "loading" | "brand";
+  source: "wallpaper" | "fallback" | "loading" | "brand" | "preset";
   wallpaper: string;
   /** Ảnh nền đã làm mờ sẵn, dạng data URI — nền của mọi bề mặt kính. Rỗng nghĩa là không có. */
   wallBlur: string;
@@ -53,7 +54,7 @@ type ThemeStore = {
   setOpts: (patch: Partial<ThemeOptions>) => void;
   setSeed: (
     seed: number,
-    source: "wallpaper" | "fallback" | "brand",
+    source: "wallpaper" | "fallback" | "brand" | "preset",
     wallpaper: string,
     error?: string,
     wallBlur?: string,
@@ -215,6 +216,11 @@ export function useTheme() {
   const needsWallpaper = opts.colorSource === "wallpaper" || opts.surfaceStyle === "glass";
 
   useEffect(() => {
+    if (opts.colorSource === "preset") {
+      const preset = COLOR_PRESETS.find((p) => p.id === opts.colorPreset) ?? COLOR_PRESETS[0];
+      setSeed(preset.seed, "preset", "");
+      return;
+    }
     if (!needsWallpaper) {
       // Phải báo ra khỏi trạng thái `loading`, nếu không panel Cài đặt đứng mãi ở "đang
       // tải" và `theme_report` không bao giờ được gửi cho bài kiểm.
@@ -234,7 +240,7 @@ export function useTheme() {
     return () => {
       cancelled = true;
     };
-  }, [setSeed, needsWallpaper, opts.wallpaperPath]);
+  }, [setSeed, needsWallpaper, opts.colorSource, opts.colorPreset, opts.wallpaperPath]);
 
   const scheme = resolveScheme(seed, opts);
 
@@ -275,12 +281,15 @@ export function useTheme() {
     error,
     wallBlur,
     opts.colorSource,
+    opts.colorPreset,
     opts.surfaceStyle,
     opts.scheme,
     opts.dark,
     opts.contrast,
     opts.termChroma,
     opts.termOpacity,
+    opts.terminalFontSize,
+    opts.terminalCursorStyle,
     opts.harmonize,
   ]);
 

@@ -25,7 +25,7 @@ export type DockItem = {
 export function Dock({ items, autoHide = false }: { items: DockItem[]; autoHide?: boolean }) {
   return (
     <div className={"dock-wrap" + (autoHide ? " auto" : "")}>
-      {autoHide && <div className="dock-hot" />}
+      <div className="dock-hot" />
       {/* Dock nổi trên canvas, mà panel browser là cửa sổ native luôn nằm trên canvas.
           Đăng ký ở đây để overlay khoét đúng vùng này ra thay vì đè lên. */}
       <nav className="dock" ref={shellFloatRef}>

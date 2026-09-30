@@ -42,7 +42,75 @@ export type LayoutMode = "spiral" | "dwindle" | "manual";
  * `wallpaper` — Material You cổ điển: trích màu gốc từ ảnh nền desktop. Đây là hành vi
  *               của các phase trước, giữ nguyên vì nó vẫn là thứ nhiều người muốn.
  */
-export type ColorSource = "brand" | "wallpaper";
+export type ColorSource = "brand" | "wallpaper" | "preset";
+
+export type PresetId =
+  | "deep-ocean"
+  | "sakura-mist"
+  | "dracula-neon"
+  | "nordic-frost"
+  | "cyber-monokai"
+  | "obsidian-minimal";
+
+export type ColorPreset = {
+  id: PresetId;
+  name: string;
+  seed: number;
+  hex: string;
+  description: string;
+  scheme: SchemeName;
+};
+
+export const COLOR_PRESETS: ColorPreset[] = [
+  {
+    id: "deep-ocean",
+    name: "Deep Ocean",
+    seed: 0xff88c9ea,
+    hex: "#88c9ea",
+    description: "Cool marine depths and luminescent cyan tides",
+    scheme: "Vibrant",
+  },
+  {
+    id: "sakura-mist",
+    name: "Sakura Mist",
+    seed: 0xffff9aaf,
+    hex: "#ff9aaf",
+    description: "Delicate blossom pink with ethereal glow",
+    scheme: "Expressive",
+  },
+  {
+    id: "dracula-neon",
+    name: "Dracula Neon",
+    seed: 0xffbd93f9,
+    hex: "#bd93f9",
+    description: "Vivid gothic purple and electro-fluorescent accents",
+    scheme: "Vibrant",
+  },
+  {
+    id: "nordic-frost",
+    name: "Nordic Frost",
+    seed: 0xff88c0d0,
+    hex: "#88c0d0",
+    description: "Arctic cold teal and clean crystalline minimalism",
+    scheme: "Content",
+  },
+  {
+    id: "cyber-monokai",
+    name: "Cyber Monokai",
+    seed: 0xffa6e22e,
+    hex: "#a6e22e",
+    description: "Legendary hacker neon lime with high-octane contrast",
+    scheme: "Vibrant",
+  },
+  {
+    id: "obsidian-minimal",
+    name: "Obsidian Minimal",
+    seed: 0xff14b8a6,
+    hex: "#14b8a6",
+    description: "Sleek obsidian black accented with surgical titanium teal",
+    scheme: "TonalSpot",
+  },
+];
 
 /**
  * Bề mặt phẳng hay bề mặt kính.
@@ -69,6 +137,8 @@ export type ThemeOptions = {
   appearanceVersion: number;
   /** Xem `ColorSource`. */
   colorSource: ColorSource;
+  /** Curated preset ID khi chọn colorSource === 'preset'. */
+  colorPreset?: PresetId;
   /** Xem `SurfaceStyle`. */
   surfaceStyle: SurfaceStyle;
   /** Chỉ có tác dụng khi `colorSource` là `wallpaper`. */
@@ -80,6 +150,10 @@ export type ThemeOptions = {
   termChroma: number;
   /** Độ đục nền terminal, 0,3…1. 1 = đặc hẳn, không thấy ảnh nền. */
   termOpacity: number;
+  /** Cỡ chữ terminal (px). */
+  terminalFontSize?: number;
+  /** Kiểu con trỏ terminal. */
+  terminalCursorStyle?: "block" | "underline" | "bar";
   /** Số dòng output mỗi terminal giữ lại; giới hạn này chặn RAM tăng theo phiên dài. */
   terminalScrollback: number;
   /** Kéo hue ANSI về phía màu gốc bao nhiêu phần (0 = giữ nguyên nghĩa ANSI). */
@@ -91,6 +165,8 @@ export type ThemeOptions = {
    * vào `theme_opts` của `storage.rs`, thêm khoá mới không phải sửa struct bên Rust.
    */
   dockAutoHide: boolean;
+  /** Dock Typing Ghost Mode & Safe Bottom Inset. */
+  dockAntiOcclusion?: boolean;
   /** Thanh workspace thu vào mép trên, rê chuột lên mép để gọi lại. */
   navAutoHide: boolean;
   /** Acrylic/Mica of the native Windows frame. */
@@ -125,6 +201,7 @@ export const DEFAULTS: ThemeOptions = {
   // BinBox Studio mặc định phong cách Dark Minimalist / Monochrome:
   // Nền đen sâu (#0a0a0a), viền xám kim loại metallic, chữ & icon trắng tương phản cao.
   colorSource: "brand",
+  colorPreset: "deep-ocean",
   surfaceStyle: "flat",
   scheme: "Monochrome",
   dark: true,
@@ -132,8 +209,11 @@ export const DEFAULTS: ThemeOptions = {
   termChroma: 1.7,
   harmonize: 0.0,
   termOpacity: 1.0,
+  terminalFontSize: 13,
+  terminalCursorStyle: "block",
   terminalScrollback: 5000,
   dockAutoHide: false,
+  dockAntiOcclusion: true,
   navAutoHide: false,
   windowVibrancy: true,
   blurEffects: true,
@@ -212,7 +292,14 @@ export function buildBrandScheme(o: ThemeOptions): DynamicScheme {
  * thẳng `buildScheme` — nếu không thì đổi nguồn màu ở Cài đặt sẽ chỉ đổi được một nửa app.
  */
 export function resolveScheme(seed: number, o: ThemeOptions): DynamicScheme {
-  return o.colorSource === "brand" ? buildBrandScheme(o) : buildScheme(seed, o);
+  if (o.colorSource === "brand") {
+    return buildBrandScheme(o);
+  }
+  if (o.colorSource === "preset") {
+    const preset = COLOR_PRESETS.find((p) => p.id === o.colorPreset) ?? COLOR_PRESETS[0];
+    return buildScheme(preset.seed, { ...o, scheme: preset.scheme });
+  }
+  return buildScheme(seed, o);
 }
 
 /** Giữ nguyên hue và tone, chỉ kéo chroma. Đây là chỗ terminal tách khỏi chrome. */
@@ -220,6 +307,17 @@ function boost(argb: number, k: number): number {
   if (k === 1) return argb;
   const h = Hct.fromInt(argb);
   return Hct.from(h.hue, h.chroma * k, h.tone).toInt();
+}
+
+/**
+ * ARGB + alpha → `#rrggbbaa`.
+ *
+ * Cả CSS lẫn xterm đều đọc được hex 8 số, nên một chuỗi duy nhất dùng được ở cả hai nơi —
+ * khỏi phải sinh riêng một dạng `rgba()` cho CSS.
+ */
+function hexWithAlpha(argb: number, alpha: number): string {
+  const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
+  return hexFromArgb(argb) + a.toString(16).padStart(2, "0");
 }
 
 /** Các role M3 app thực sự dùng. Thêm role nào thì thêm ở đây, đừng viết hex ở CSS. */
@@ -268,6 +366,13 @@ export function chromeVars(s: DynamicScheme): Record<string, string> {
     const dc = (MaterialDynamicColors as unknown as Record<string, { getArgb(x: DynamicScheme): number }>)[role];
     if (dc) out["--ui-" + kebab(role)] = hexFromArgb(dc.getArgb(s));
   }
+
+  // Tinted Glass (surface container tinted with theme hue) and Tinted Typography (soft tinted white)
+  const surfaceArgb = MaterialDynamicColors.surfaceContainerLow.getArgb(s);
+  const onSurfaceArgb = MaterialDynamicColors.onSurface.getArgb(s);
+  out["--ui-tinted-glass"] = hexWithAlpha(surfaceArgb, 0.65);
+  out["--ui-tinted-text"] = hexFromArgb(onSurfaceArgb);
+
   return out;
 }
 
@@ -314,17 +419,6 @@ export function ansiColors(s: DynamicScheme, o: ThemeOptions): AnsiColors {
   return out;
 }
 
-/**
- * ARGB + alpha → `#rrggbbaa`.
- *
- * Cả CSS lẫn xterm đều đọc được hex 8 số, nên một chuỗi duy nhất dùng được ở cả hai nơi —
- * khỏi phải sinh riêng một dạng `rgba()` cho CSS.
- */
-function hexWithAlpha(argb: number, alpha: number): string {
-  const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255);
-  return hexFromArgb(argb) + a.toString(16).padStart(2, "0");
-}
-
 export function terminalVars(s: DynamicScheme, o: ThemeOptions): Record<string, string> {
   const k = o.termChroma;
   const bg = MaterialDynamicColors.surfaceContainerLowest.getArgb(s);
@@ -355,6 +449,12 @@ export function terminalVars(s: DynamicScheme, o: ThemeOptions): Record<string, 
     "--term-cursor": hexFromArgb(cursor),
     "--term-selection": hexFromArgb(sel),
   };
+  if (o.terminalFontSize) {
+    out["--term-font-size"] = `${o.terminalFontSize}px`;
+  }
+  if (o.terminalCursorStyle) {
+    out["--term-cursor-style"] = o.terminalCursorStyle;
+  }
   for (const [name, hex] of Object.entries(ansiColors(s, o))) {
     out["--term-" + kebab(name)] = hex;
   }

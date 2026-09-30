@@ -11,7 +11,7 @@ import {
   type Rect,
 } from "./geometry";
 import { setSnapshot } from "./snapshot";
-import { Icon } from "../ui/Icon";
+import { HeroGlassDashboard } from "./HeroGlassDashboard";
 
 // Terminal is the default view, while the auxiliary panels load on demand. This keeps the
 // initial renderer path smaller without changing the lifetime of already-open panels.
@@ -260,9 +260,12 @@ export function Tiles({ theme }: Props) {
       {ready && layout.gutters.map((g) => <Gutter key={g.id} info={g} />)}
 
       {ready && !tree && (
-        <EmptyState
+        <HeroGlassDashboard
           onTerminal={() => createPanel({ type: "terminal" })}
           onFiles={() => createPanel({ type: "explorer" })}
+          onAi={() => createPanel({ type: "ai" })}
+          onWeb={() => createPanel({ type: "web" })}
+          onOpenRecent={(path) => createPanel({ type: "terminal", cwd: path })}
         />
       )}
 
@@ -573,25 +576,5 @@ function DropOverlay({ box, layout }: { box: Rect; layout: Layout }) {
         <span>moving panel</span>
       </div>
     </>
-  );
-}
-
-function EmptyState({ onTerminal, onFiles }: { onTerminal: () => void; onFiles: () => void }) {
-  return (
-    <div className="empty-workspace">
-      <div className="empty-card">
-        <h3>Start a workspace</h3>
-        <div className="empty-actions">
-          <button className="empty-btn primary" onClick={onTerminal}>
-            <Icon name="terminal" size={18} />
-            <span>Terminal</span>
-          </button>
-          <button className="empty-btn secondary" onClick={onFiles}>
-            <Icon name="folder" size={18} />
-            <span>Files</span>
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }

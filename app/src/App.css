@@ -1082,6 +1082,10 @@ body.dragging-panel .iconbtn.move-handle { cursor: grabbing; }
   padding: 6px 2px 6px 10px;
   background: var(--term-bg);
 }
+/* Safe Bottom Inset: ensures terminal prompt is never occluded when dock is pinned */
+.app:not(.dock-auto) .term {
+  padding-bottom: calc(var(--dock-h) + var(--gap));
+}
 /* xterm cũng đặt nền lên `.xterm-viewport`; để nguyên là chồng thêm một lớp nữa. */
 .term .xterm-viewport { background-color: transparent; }
 .term .xterm-viewport::-webkit-scrollbar { width: 10px; }
@@ -1228,62 +1232,67 @@ body.dragging-panel .iconbtn.move-handle { cursor: grabbing; }
   font-weight: 700;
   letter-spacing: -0.01em;
 }
-.set-rail-logo { width: 34px; height: 34px; border-radius: var(--r-md); object-fit: cover; }
+.set-rail-logo { width: 34px; height: 34px; border-radius: 0px; object-fit: cover; }
 .set-rail-nav { display: flex; flex-direction: column; gap: 6px; }
 .set-rail-nav button {
   width: 100%;
-  min-height: 52px;
+  min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
   padding: 6px 12px 6px 8px;
-  border: none;
-  border-radius: var(--r-full);
+  border: 1px solid transparent;
+  border-radius: 0px;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
   background: transparent;
   color: var(--ui-on-surface-variant);
   cursor: pointer;
   transition:
     background var(--motion-fast) var(--e-standard),
+    border-color var(--motion-fast) var(--e-standard),
     color var(--motion-fast) var(--e-standard),
     transform var(--motion-medium) var(--e-jiggle);
 }
 .set-rail-nav button:hover {
   background: color-mix(in srgb, var(--ui-on-surface) 8%, transparent);
+  border-color: color-mix(in srgb, var(--ui-outline-variant) 40%, transparent);
   color: var(--ui-on-surface);
   transform: translate3d(2px, 0, 0);
 }
 .set-rail-nav button.on {
   background: var(--ui-secondary-container);
+  border-color: color-mix(in srgb, var(--ui-outline) 50%, transparent);
+  border-left: 2px solid var(--ui-primary);
   color: var(--ui-on-secondary-container);
 }
-.set-rail-nav button:active { transform: scale(0.94); }
+.set-rail-nav button:active { transform: scale(0.96); }
 .set-rail-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-full);
+  border-radius: 0px;
   transition: background var(--motion-fast) var(--e-standard);
 }
 .set-rail-nav button.on .set-rail-icon {
   color: var(--ui-primary);
   animation: set-jiggle 620ms linear;
 }
-.set-rail-label { min-width: 0; flex: 1; text-align: left; font-size: 14px; font-weight: 500; }
+.set-rail-label { min-width: 0; flex: 1; text-align: left; font-size: 13.5px; font-weight: 600; font-family: var(--font-sans); }
 .set-rail-state {
-  width: 6px;
-  height: 6px;
+  width: 3px;
+  height: 16px;
   flex: none;
-  border-radius: var(--r-full);
-  background: currentColor;
+  border-radius: 0px;
+  background: var(--ui-primary);
   opacity: 0;
-  transform: scale(0.4);
+  transform: scaleY(0.3);
   transition: opacity var(--motion-fast) var(--e-standard), transform var(--motion-medium) var(--e-jiggle);
 }
-.set-rail-nav button.on .set-rail-state { opacity: 0.72; transform: scale(1); }
+.set-rail-nav button.on .set-rail-state { opacity: 0.9; transform: scaleY(1); }
 
 /* ── Chuyển động ────────────────────────────────────────────────────
    Hai nhịp, và chỉ hai. `set-pop-in` đưa nội dung vào chỗ với một cú vọt qua đích rất nhỏ;
@@ -1492,6 +1501,86 @@ body.dragging-panel .iconbtn.move-handle { cursor: grabbing; }
 }
 .set-card.on .set-card-label { font-weight: 600; }
 .set-card.on .set-card-state { opacity: 1; transform: scale(1); }
+
+.preset-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.preset-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 14px 12px;
+  min-height: 98px;
+  background: var(--ui-surface-container-low);
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 35%, transparent);
+  border-radius: 0px;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--e-standard),
+    border-color var(--motion-fast) var(--e-standard),
+    transform var(--motion-fast) var(--e-standard);
+}
+.preset-card:hover {
+  background: var(--ui-surface-container);
+  border-color: var(--ui-primary);
+  transform: translateY(-1px);
+}
+.preset-card.on {
+  background: var(--ui-secondary-container);
+  border-color: var(--ui-primary);
+  box-shadow: inset 0 0 0 1px var(--ui-primary);
+}
+.preset-swatch {
+  width: 28px;
+  height: 10px;
+  margin-bottom: 8px;
+  border-radius: 0px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.preset-card .set-card-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ui-on-surface);
+  margin-bottom: 4px;
+}
+.preset-card .set-card-hint {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ui-on-surface-variant);
+  opacity: 0.85;
+}
+
+.set-segmented {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+.set-segmented button {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-family: var(--font-mono);
+  background: var(--ui-surface-container-low);
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 35%, transparent);
+  color: var(--ui-on-surface-variant);
+  border-radius: 0px;
+  cursor: pointer;
+  transition: all var(--motion-fast) var(--e-standard);
+}
+.set-segmented button:hover {
+  color: var(--ui-on-surface);
+  border-color: var(--ui-outline);
+}
+.set-segmented button.on {
+  background: var(--ui-primary);
+  color: var(--ui-on-primary);
+  border-color: var(--ui-primary);
+  font-weight: 700;
+}
 
 .set-status {
   width: fit-content;
@@ -1798,6 +1887,263 @@ body.dragging-panel * {
   container-type: inline-size;
 }
 
+/* ==========================================================================
+   Hero Glass Dashboard — Empty State (v0.2.3)
+   ========================================================================== */
+
+.hero-dashboard-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 40px);
+}
+
+.hero-glass-card {
+  width: min(100%, 780px);
+  padding: 32px 36px;
+  background: color-mix(in srgb, var(--ui-surface-container-lowest, #0a0a0f) 30%, transparent);
+  backdrop-filter: blur(20px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 45%, transparent);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
+  animation: hero-card-in var(--motion-slow) var(--e-decelerate) both;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@keyframes hero-card-in {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+.hero-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.hero-brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 12px;
+  background: color-mix(in srgb, var(--ui-surface-container-high) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 40%, transparent);
+  font-family: var(--font-mono, Consolas, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ui-on-surface);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.hero-brand-badge .brand-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-primary);
+  box-shadow: 0 0 8px var(--ui-primary);
+}
+
+.hero-badge-ver {
+  color: var(--ui-primary);
+  font-weight: 800;
+}
+
+.hero-clock {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-mono, Consolas, monospace);
+  line-height: 1;
+  color: var(--ui-on-surface);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--ui-primary) 30%, transparent);
+}
+
+.hero-time {
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hero-seconds {
+  font-size: clamp(16px, 2.5vw, 22px);
+  font-weight: 500;
+  color: var(--ui-primary);
+  opacity: 0.85;
+}
+
+.hero-date {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ui-on-surface-variant);
+  letter-spacing: 0.02em;
+}
+
+.hero-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .hero-actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hero-action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--ui-surface-container-high) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 38%, transparent);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--motion-fast) var(--e-standard);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-action-card:hover {
+  background: color-mix(in srgb, var(--ui-surface-container-highest) 75%, transparent);
+  border-color: var(--ui-primary);
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.4);
+}
+
+.hero-action-card:active {
+  transform: translate3d(0, 0, 0);
+}
+
+.hero-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hero-card-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-card-tag {
+  font-family: var(--font-mono, Consolas, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ui-on-surface-variant);
+  background: color-mix(in srgb, var(--ui-surface-container) 80%, transparent);
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 25%, transparent);
+}
+
+.hero-card-title {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ui-on-surface);
+  line-height: 1.3;
+}
+
+.hero-card-subtitle {
+  font-size: 11.5px;
+  color: var(--ui-on-surface-variant);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.hero-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ui-primary);
+  opacity: 0;
+  transform: translate3d(-4px, 0, 0);
+  transition: all var(--motion-fast) var(--e-standard);
+}
+
+.hero-action-card:hover .hero-card-footer {
+  opacity: 1;
+  transform: none;
+}
+
+.hero-recent-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--ui-outline-variant) 25%, transparent);
+}
+
+.hero-recent-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ui-on-surface-variant);
+}
+
+.hero-recent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-recent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--ui-surface-container) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-outline-variant) 32%, transparent);
+  cursor: pointer;
+  transition: all var(--motion-fast) var(--e-standard);
+  max-width: 100%;
+}
+
+.hero-recent-pill:hover {
+  background: color-mix(in srgb, var(--ui-surface-container-high) 85%, transparent);
+  border-color: var(--ui-primary);
+  transform: translate3d(0, -1px, 0);
+}
+
+.hero-recent-icon {
+  flex: none;
+  color: var(--ui-primary);
+}
+
+.hero-recent-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ui-on-surface);
+}
+
+.hero-recent-path {
+  font-family: var(--font-mono, Consolas, monospace);
+  font-size: 10.5px;
+  color: var(--ui-on-surface-variant);
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
 .empty-card {
   width: min(100%, 400px);
   padding: 24px 26px;
@@ -1912,6 +2258,20 @@ body.dragging-panel * {
 .dock-wrap.auto:hover .dock {
   transform: none;
   opacity: 1;
+}
+
+/* Typing Ghost Mode: Fades dock to 0.12 opacity during active typing with pointer-events: none */
+body.terminal-typing .dock-wrap:not(:hover) .dock,
+.app.terminal-typing .dock-wrap:not(:hover) .dock {
+  opacity: 0.12 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease;
+}
+
+.dock-wrap:hover .dock,
+.dock-hot:hover ~ .dock {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 /* Cùng một đánh đổi như dải của thanh trên, ở đầu kia màn hình: dải này che mất bấy nhiêu
    pixel đáy panel. 32px ăn tới 22px cuối của terminal — đủ để hụt một lần bôi đen dòng

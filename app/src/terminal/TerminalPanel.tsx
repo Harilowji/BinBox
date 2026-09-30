@@ -24,10 +24,12 @@ type Props = {
 export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const scrollback = useThemeStore((s) => s.opts.terminalScrollback);
+  const fontSize = useThemeStore((s) => s.opts.terminalFontSize);
+  const cursorStyle = useThemeStore((s) => s.opts.terminalCursorStyle);
 
   const { state, error, blocks, running, cwd: liveCwd, copyLastOutput, jumpPrev, jumpNext } = usePty(
     host,
-    { shell, cwd, theme, panelKey, panelVisible: visible, scrollback },
+    { shell, cwd, theme, panelKey, panelVisible: visible, scrollback, fontSize, cursorStyle },
   );
 
   // Đẩy thư mục thật lên store để Ctrl+Shift+D nhân đôi panel *ở đúng chỗ shell đang đứng*,

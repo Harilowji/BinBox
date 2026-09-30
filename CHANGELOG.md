@@ -6,6 +6,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-09-30
+
+> Ergonomics upgrade: Hero Glass Dashboard, 5-tab Settings overhaul, Sameko-inspired curated color presets, smart dock anti-occlusion, and terminal font/cursor customization.
+
+### Added
+- **Hero Glass Dashboard**: Expansive frosted-glass empty workspace with live digital clock, date display, and 4 prominent quick-action cards (Terminal, Files, AI Agent, Web).
+- **6 Curated Color Presets**: Sameko-inspired themes — Deep Ocean, Sakura Mist, Dracula Neon, Nordic Frost, Cyber Monokai, and Obsidian Minimal — fed into Material You HCT engine with Tinted Glass and Tinted Typography.
+- **Terminal Font Size & Cursor Style**: Configurable font size (11–20px) and cursor style (block / underline / bar) with live hot-reload across all open terminals.
+- **Smart Anti-Occlusion Dock (Typing Ghost Mode)**: Dock automatically fades to 12% opacity with `pointer-events: none` during active terminal typing, restoring smoothly 1.2s after typing stops or on bottom hot-zone hover.
+- **Safe Bottom Inset**: Terminal viewport applies ergonomic bottom padding when dock is pinned so the prompt is never covered.
+- **Tinted Glass & Typography CSS Variables**: `--ui-tinted-glass` (surface container with 65% alpha) and `--ui-tinted-text` (soft M3 onSurface avoiding harsh #fff).
+
+### Changed
+- **Settings Menu Overhaul**: Reorganized from 5 mixed tabs into 5 focused tabs — Display & Wallpaper, Colors & Presets, Terminal, Workspace, and Shortcuts & About.
+- **Origami Chamfered Settings Rail**: Replaced rounded `r-full` navigation buttons with 45° chamfered rectangles (`.chamfer-tr`, 0px radius, metallic border, vertical primary accent indicator).
+- **Color Source Expansion**: Added `preset` as a third color source alongside `brand` and `wallpaper`, with full HCT scheme resolution per preset.
+- **All UI Labels Standardized to English**: Clean, professional English labels across all settings groups.
+
+### Fixed
+- **Preset Scheme Resolution**: `resolveScheme()` now correctly looks up preset seed and scheme when `colorSource === "preset"`, preventing fallback to wrong scheme.
+
 ## [0.2.2] - 2026-09-30
 
 > Wallpaper Engine deep sync engine matching WESyncServer.js algorithm, HD/4K .tex texture carving, and translucent glassmorphism terminal layer.
