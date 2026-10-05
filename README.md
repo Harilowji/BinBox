@@ -126,6 +126,11 @@ Invoke-WebRequest -Uri "https://github.com/Harilowji/BinBox/releases/download/v0
 | <kbd>Ctrl</kbd> + <kbd>,</kbd> | Open Settings |
 | <kbd>F11</kbd> | Toggle Fullscreen |
 
+## 🗺️ Strategic Roadmap
+
+Looking for what's coming next? Check out our comprehensive technical roadmap and architecture evolution:
+👉 [**Read the BinBox Studio Roadmap (2026–2027)**](ROADMAP.md) — detailing the upcoming **v0.3.0 "Agentic Workspace"** (MCP Protocol, AI PTY Bridge, Fuzzy Quick Open), **v0.4.0 "Hyper-Tiling"** (Tabbed Containers, Floating Scratchpad), and **v1.0.0 Enterprise Release**.
+
 <img src="assets/dividers/divider.svg" width="100%" />
 
 ## 🛠️ Build from Source

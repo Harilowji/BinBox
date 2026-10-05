@@ -1,4 +1,4 @@
-# BÁO CÁO TOÀN DIỆN DỰ ÁN BINBOX STUDIO (v0.2.0)
+# BÁO CÁO TOÀN DIỆN DỰ ÁN BINBOX STUDIO (v0.2.3)
 **Tài liệu Phân tích Kỹ thuật, Hệ thống Màu sắc & Cơ chế Vận hành Kiến trúc**
 
 ---
@@ -6,7 +6,7 @@
 ## 1. TỔNG QUAN DỰ ÁN (PROJECT OVERVIEW)
 
 * **Tên ứng dụng chính thức:** **BinBox Studio**
-* **Phiên bản hiện tại:** `v0.2.0`
+* **Phiên bản hiện tại:** `v0.2.3`
 * **Mục tiêu cốt lõi:** Cung cấp một môi trường làm việc dạng lưới (Tiling Workspace) lấy cảm hứng từ các Window Manager danh tiếng trên Linux (như Hyprland, i3wm, Sway) được thiết kế tối ưu hóa chuyên sâu cho hệ điều hành Windows 10 và Windows 11.
 * **Tệp người dùng mục tiêu:** Lập trình viên hiện đại, DevOps, chuyên gia hệ thống, và các nhà phát triển sử dụng công cụ AI Coding Agents tự động (`aider`, `claude-code`, `codex`, `cursor`) nhằm loại bỏ hoàn toàn chi phí chuyển đổi ngữ cảnh (Context-switching tax) do tình trạng chồng chéo cửa sổ trên Windows.
 * **Ngăn xếp công nghệ (Core Tech Stack):**
@@ -78,6 +78,20 @@ BinBox Studio hoạt động dựa trên mô hình kiến trúc hai tầng liên
      - **OSC 133 A/B/C/D:** Bắt chính xác thời điểm hiển thị prompt, người dùng nhấn phím Enter chạy lệnh, thời gian thực thi, và mã thoát (`exit code` 0 hoặc lỗi). Nhờ đó, thanh tiêu đề tự động hiển thị tên tiến trình thật đang chạy.
      - **OSC 7:** Shell tự động báo URL thư mục hiện tại sau mỗi lệnh `cd`, cho phép app mở File Explorer hoặc Live Preview đúng vị trí tệp tin mà không cần thăm dò định kỳ.
 
+### 2.3. Module Đồng Bộ Nền Động Wallpaper Engine & Unified Background Provider (v0.2.2 & v0.2.3):
+1. **Dò tìm Zero-Polling qua Steam Library & Registry (`wallpaper_engine/detector.rs`):**
+   - Đọc registry Windows (`HKCU\Software\Valve\Steam\SteamPath` và `HKLM\SOFTWARE\WOW6432Node\Valve\Steam\InstallPath`).
+   - Phân tích file `libraryfolders.vdf` để phát hiện tự động thư mục Wallpaper Engine trên mọi ổ đĩa (C:, D:, E:, F:...).
+2. **Theo dõi sự kiện file không tốn CPU (`Zero-Polling Event Watcher` qua `notify` crate):**
+   - Đặt watcher theo dõi `config.json` của Wallpaper Engine. Chỉ thức dậy khi có sự kiện `Write` từ Wallpaper Engine khi người dùng đổi hình nền.
+   - Khi chạy ở chế độ Solid Brand hoặc Custom Image, luồng giám sát hoàn toàn bị hủy/drop để bảo toàn 0.0% CPU.
+3. **Bộ phân giải nhị phân Native (`Binary Parser` cho `.pkg` và `.tex`):**
+   - Đọc header nhị phân `PKGV`, trích xuất file video gốc (.mp4, .webm) hoặc texture/thumbnail của Scene wallpaper.
+   - Tự động bóc tách các ảnh tĩnh 4K/HD dạng PNG/JPEG nhúng bên trong container `.tex` độc quyền của Wallpaper Engine mà không cần phần mềm bên thứ ba.
+   - Mọi tác vụ I/O và parse nhị phân chạy trên `tokio::task::spawn_blocking` để không làm chặn main thread.
+4. **Tự động tạm dừng đa phương tiện (`Smart Auto-Pause`):**
+   - Tự động pause video background khi cửa sổ BinBox Studio mất focus hoặc bị thu nhỏ (minimize) để bảo tồn tài nguyên GPU và pin laptop.
+
 ---
 
 ## 3. CHI TIẾT HỆ THỐNG MÀU SẮC (THE COLOR & PALETTE ENGINE)
@@ -125,15 +139,25 @@ Khi người dùng chuyển sang chế độ `wallpaper` trong Settings:
    - `Neutral`: Giảm tối đa chroma cho môi trường làm việc tĩnh lặng.
    - `Content`: Bám sát tuyệt đối vào màu sắc của bức ảnh nền.
 
+3. **6 Bảng màu Tuyển chọn lấy cảm hứng từ Sameko (Curated Presets - v0.2.3):**
+   - **Deep Ocean (`#88c9ea`):** Tông xanh đại dương huyền ảo, cân bằng độ sâu thị giác khi làm việc ban đêm.
+   - **Sakura Mist (`#ff9aaf`):** Sắc hồng anh đào dịu nhẹ, phong cách pastel tương phản êm dịu.
+   - **Dracula Neon (`#bd93f9`):** Tím neon đậm chất cyberpunk, cảm hứng từ chủ đề Dracula kinh điển.
+   - **Nordic Frost (`#88c0d0`):** Xanh băng Bắc Âu lạnh giá, tối ưu tối đa cho độ tập trung cao độ.
+   - **Cyber Monokai (`#a6e22e`):** Xanh lục điện tử rực rỡ, biểu tượng của các lập trình viên kỳ cựu.
+   - **Obsidian Minimal (`#14b8a6`):** Xanh mòng két ngọc thạch trên nền đá núi lửa đen tuyền.
+
 ### 3.3. Dải 16 màu ANSI Terminal & Thuật toán Hòa sắc (`HarmonizeHue`):
 * Các màu ANSI cơ bản (đỏ, lục, lam, vàng, tím, lơ) được giữ nguyên giá trị nhận diện kỹ thuật:
   - Red: 25°, Green: 145°, Yellow: 95°, Blue: 255°, Magenta: 320°, Cyan: 200°.
 * **Hàm `harmonizeHue`:** Kéo nhẹ góc hue ANSI một phần nhỏ (`amt = 0.06` hoặc `0.00` ở Brand) về phía màu chủ đạo của giao diện. Nhờ đó, văn bản terminal luôn đồng điệu với khung cửa sổ xung quanh mà màu đỏ của lỗi (`git diff`, compiler error) không bao giờ bị lệch sang màu cam.
 * **Hệ số `termChroma = 1.7`:** Nhân độ rực của màu chữ terminal lên 1.7 lần so với thanh công cụ để code và log luôn nổi bật trên nền đen.
+* **Tùy biến Font & Con trỏ thời gian thực (v0.2.3):** Điều chỉnh kích thước chữ terminal (11px &ndash; 20px) và kiểu con trỏ (`block`, `underline`, `bar`) với cơ chế hot-reload phản hồi tức thì trên mọi terminal đang mở.
 
-### 3.4. Bề mặt hiển thị (Surface Styles):
-* **`flat` (Mặc định ở v0.2.0):** Bề mặt đen đặc, viền sắc nét, tắt hoàn toàn bộ lọc mờ. Chế độ này tối ưu hiệu năng tối đa, GPU tải xấp xỉ **0.0%**.
-* **`glass` (Kính mờ xuyên thấu):** Sử dụng Acrylic/Mica của Windows DWM kết hợp thanh trượt độ đục `termOpacity` (từ 0.3 đến 1.0). Khi sử dụng cùng Wallpaper Engine hoặc ảnh nền, hình ảnh phía sau sẽ chuyển động hoặc hiển thị mờ ảo dưới các panel terminal.
+### 3.4. Bề mặt hiển thị (Surface Styles) & Kính pha màu (Tinted Glass):
+* **`flat` (Chế độ phẳng công nghiệp):** Bề mặt đen đặc, viền sắc nét, tắt hoàn toàn bộ lọc mờ. Chế độ này tối ưu hiệu năng tối đa, GPU tải xấp xỉ **0.0%**.
+* **`glass` (Kính mờ xuyên thấu):** Sử dụng Acrylic/Mica của Windows DWM kết hợp thanh trượt độ đục `termOpacity` (từ 0.3 đến 1.0) và độ mờ hậu cảnh `blurRadius` (0 &ndash; 20px).
+* **Tinted Glass & Tinted Typography (`--ui-tinted-glass` & `--ui-tinted-text`):** Lớp phủ kính được nhuộm nhẹ theo sắc độ của chủ đề hiện tại (`surfaceContainer` với 65% alpha), đồng thời chữ màu trắng được khử chói nhẹ theo M3 `onSurface`, tránh mỏi mắt sau nhiều giờ nhìn màn hình liên tục.
 
 ---
 
@@ -141,24 +165,27 @@ Khi người dùng chuyển sang chế độ `wallpaper` trong Settings:
 
 | Tính Năng | Mô Tả Kỹ Thuật Chi Tiết | Phím Tắt / Vận Hành |
 | :--- | :--- | :--- |
+| **Hero Glass Dashboard (v0.2.3)** | Màn hình khởi đầu kính mờ mở rộng (`backdrop-blur-md`, viền vát Origami 45°), tích hợp đồng hồ số phát sáng nhẹ, ngày tháng và 4 thẻ tác vụ nhanh (`>_ Terminal`, `📁 Explorer`, `✨ AI Agent`, `🌐 Web`) cùng danh sách Recent Projects. | Hiển thị tự động khi workspace trống chưa có panel |
 | **Lưới Tiling Tự Động** | Chia màn hình theo cây nhị phân (Binary Tree). Hỗ trợ thuật toán **Spiral** (xoắn ốc kiểu Hyprland) và **Dwindle** (cắt cạnh dài nhất). Kéo thả đường phân cách điều chỉnh kích thước linh hoạt. | `Ctrl+Shift+E` (chia phải)<br>`Ctrl+Shift+O` (chia dưới)<br>`Ctrl+Shift+D` (nhân đôi) |
-| **Terminal Hiệu Năng Cao** | Tích hợp ConPTY, hỗ trợ WebGL tăng tốc phần cứng, Unicode 11 (CJK, Emoji), chuột tương tác xterm, tự bắt link tệp/URL để mở preview với 1 click. | `Ctrl+T` (mở terminal mới)<br>`Ctrl+W` (đóng panel active)<br>`Ctrl+Tab` (đổi focus) |
+| **Smart Anti-Occlusion Dock (v0.2.3)** | Thanh Dock thông minh tự động kích hoạt **Typing Ghost Mode** (giảm opacity về 0.12 và `pointer-events: none`) khi phát hiện gõ phím trong terminal, phục hồi sau 1.2s. Áp dụng safe bottom inset chống che khuất prompt. | Tự động phản ứng theo trạng thái gõ phím |
+| **Terminal Hiệu Năng Cao** | Tích hợp ConPTY, hỗ trợ WebGL tăng tốc phần cứng, Unicode 11 (CJK, Emoji), chuột tương tác xterm, tự bắt link tệp/URL để mở preview với 1 click. Hot-reload kích thước font và kiểu con trỏ. | `Ctrl+T` (mở terminal mới)<br>`Ctrl+W` (đóng panel active)<br>`Ctrl+Tab` (đổi focus) |
 | **Đa Workspace Độc Lập** | Tạo các không gian làm việc ảo song song. Mỗi workspace lưu trữ sơ đồ lưới, panel và thư mục riêng biệt. Tab chuyển đổi mượt mà với hiệu ứng trượt Tonal Pill. | `Alt+1..9` (nhảy thẳng workspace)<br>`Ctrl+1 / Ctrl+3` (lùi/tiến workspace) |
 | **Code Editor & Live Preview** | Trình soạn thảo mã nguồn tích hợp sẵn số dòng, thụt lề cú pháp, hỗ trợ phím lưu trực tiếp. Xem trước thời gian thực file Markdown (Gfm), hình ảnh (PNG, JPG, SVG, WebP) và Git Diff. | `Ctrl+S` (lưu file trực tiếp)<br>Click vào link file trên terminal để mở |
 | **AI Coding Assistant** | Panel trợ lý AI hỗ trợ kết nối cục bộ qua Ollama hoặc Cloud API. Đọc ngữ cảnh tệp tin, sinh mã nguồn, hỗ trợ nút bấm 1-click **Lưu vào File** và **Chạy trên Terminal**. | Mở qua thanh Dock bên dưới hoặc Command Palette |
 | **Trình Duyệt Web Native** | Nhúng trực tiếp WebView2 native surface vào khung lưới tiling. Hỗ trợ duyệt web, test cổng localhost dev server (`localhost:3000`, `5173`), chặn DevTools trên bản phát hành. | Mở từ Dock hoặc link web trong terminal |
 | **Giám Sát Hệ Thống (Sysfetch)** | Bảng thông tin hệ thống dạng ASCII Art logo **BINBOX STUDIO**, theo dõi trực tiếp % CPU, RAM, GPU, tốc độ mạng I/O và quang phổ âm thanh đa phương tiện (WASAPI). | Mở qua Dock (icon Dashboard) |
 | **Bảng Lệnh Tập Trung** | Command Palette hỗ trợ tìm kiếm mờ (fuzzy search) cho tất cả các thao tác: mở tệp, đổi workspace, chia panel, đổi theme, kiểm tra cập nhật. | `Ctrl+K` hoặc `F1` |
+| **Menu Cài Đặt 5 Tab (v0.2.3)** | Tái cấu trúc menu cài đặt thành 5 tab tập trung (*Display & Wallpaper*, *Colors & Presets*, *Terminal*, *Workspace*, *Shortcuts & About*) với thanh rail vát góc Origami kim loại chuẩn công nghiệp. | `Ctrl+,` hoặc mở qua Dock |
 
 ---
 
 ## 5. ĐÁNH GIÁ MỨC TIÊU THỤ PHẦN CỨNG (RESOURCE EFFICIENCY)
 
-So sánh định lượng giữa **BinBox Studio** và các ứng dụng cùng phân khúc xây dựng trên Electron (như Hyper, VS Code, Spotify):
+So sánh định lượng giữa **BinBox Studio (v0.2.3)** và các ứng dụng cùng phân khúc xây dựng trên Electron (như Hyper, VS Code, Spotify):
 
-| Tiêu Chí Đánh Giá | BinBox Studio (v0.2.0) | Ứng Dụng Electron Thông Thường |
+| Tiêu Chí Đánh Giá | BinBox Studio (v0.2.3) | Ứng Dụng Electron Thông Thường |
 | :--- | :---: | :---: |
-| **Dung lượng bộ cài đặt** | **~3.5 MB** (NSIS) / **~5.0 MB** (MSI) | 120 MB &ndash; 250 MB |
+| **Dung lượng bộ cài đặt** | **~3.6 MB** (NSIS) / **~5.1 MB** (MSI) | 120 MB &ndash; 250 MB |
 | **Số lượng tiến trình nền** | **1 tiến trình app chính** + shell con | 4 &ndash; 7 tiến trình Chromium/Node |
 | **RAM ở trạng thái nghỉ** | **40 &ndash; 65 MB** | 180 &ndash; 400 MB |
 | **RAM khi chạy ngầm / mất focus** | **Tự động giải phóng về ~25 MB** | Giữ nguyên hoặc phình bộ nhớ |
@@ -167,14 +194,22 @@ So sánh định lượng giữa **BinBox Studio** và các ứng dụng cùng p
 
 ---
 
-## 6. LỘ TRÌNH PHÁT TRIỂN TIẾP THEO (NEXT PHASES)
+## 6. LỘ TRÌNH PHÁT TRIỂN CHIẾN LƯỢC (STRATEGIC ROADMAP)
 
-1. **Phase 2 (Workspace & Multi-tab Terminals):**
-   - Bổ sung cơ chế Tab bên trong từng panel terminal đơn lẻ (tương tự Windows Terminal hoặc iTerm2 tabs) bên cạnh cơ chế Tiling hiện có.
-   - Ghi nhớ và phục hồi chính xác vị trí con trỏ và lệnh đang chạy giữa các phiên làm việc.
-2. **Phase 3 (Deep AI & Live Environment Sync):**
-   - Tích hợp sâu AI Sidecar có quyền đọc cây thư mục và hỗ trợ sửa code theo yêu cầu của lập trình viên ngay trên Canvas.
-   - Thử nghiệm module kết nối Wallpaper Engine viết bằng Rust: Đọc file cấu hình `config.json` và giải mã `.pkg` trực tiếp ở tầng native với chi phí 0% CPU.
+Chi tiết lộ trình kỹ thuật dài hạn đã được công bố tại [**`ROADMAP.md`**](ROADMAP.md):
+
+* **Milestone 1: BinBox Studio v0.3.0 — "The Agentic Workspace" (Q4 2026):**
+  - **Tích hợp Model Context Protocol (MCP):** Đóng vai trò MCP Server cung cấp ngữ cảnh terminal, git status và filesystem cho các AI Coding Agent (`claude-code`, `antigravity`, `aider`).
+  - **Cầu nối Terminal Điều khiển bởi Agent:** Agent đề xuất lệnh kèm nút duyệt trực quan (`Run` / `Edit` / `Deny`). Tự động phát hiện lỗi compiler để gợi ý giải pháp sửa chữa.
+  - **Fuzzy Quick Open (`Ctrl+P`):** Tìm kiếm và mở nhanh file mã nguồn vào panel preview.
+* **Milestone 2: BinBox Studio v0.4.0 — "Hyper-Tiling & Multi-Display" (Q1 2027):**
+  - **Tabbed & Stacked Containers:** Ghép nhiều tab terminal hoặc preview trong cùng một ô chia.
+  - **Floating Scratchpad (`Alt+Space`):** Cửa sổ nổi bật nhanh dạng overlay.
+  - **Đa Màn Hình:** Hỗ trợ tách panel sang màn hình phụ và đồng bộ Wallpaper Engine độc lập trên từng màn hình.
+* **Milestone 3: BinBox Studio v1.0.0 — "The Enterprise Windows Native Milestone" (Q2 2027):**
+  - **Tự động hóa Ký số Code Signing:** Pipeline CI ký số Authenticode tự động, loại bỏ hoàn toàn cảnh báo SmartScreen.
+  - **Hệ thống Plugin Mở rộng (Lua / WASM):** Cho phép cộng đồng viết extension tùy biến tiling, theme và widget.
+  - **Phân phối chính thức qua Winget:** `winget install BinBox.Studio`.
 
 ---
 
