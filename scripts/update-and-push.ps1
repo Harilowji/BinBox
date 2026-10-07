@@ -49,49 +49,31 @@ try {
     Pop-Location
 }
 
-# [3/5] Biên dịch Rust Release (x86_64-pc-windows-gnu)
+# [3/5] Kiểm tra & Biên dịch Rust
 Write-Host ""
-Write-Host "[3/5] Bien dich Rust Release binary..." -ForegroundColor Yellow
-Push-Location $TauriDir
-try {
-    rustup run stable-x86_64-pc-windows-gnu cargo build --release --target x86_64-pc-windows-gnu
-    if ($LASTEXITCODE -ne 0) { throw "Cargo build that bai!" }
-    Write-Host "  -> Rust Release binary build thanh cong!" -ForegroundColor Green
-} finally {
-    Pop-Location
-}
+Write-Host "[3/5] Kiem tra trinh bien dich Rust..." -ForegroundColor Yellow
+$HasMsvc = $null -ne (Get-Command "link.exe" -ErrorAction SilentlyContinue)
 
-# [4/5] Cập nhật bản cài đặt cục bộ (AppData)
-Write-Host ""
-Write-Host "[4/5] Cap nhat BinBox Studio vao thu muc cai dat..." -ForegroundColor Yellow
-$BuiltExe = "$TauriDir\target\x86_64-pc-windows-gnu\release\app.exe"
-if (-not (Test-Path $BuiltExe)) {
-    throw "Khong tim thay tap tin binary build: $BuiltExe"
-}
-
-if (-not (Test-Path $LocalInstallDir)) {
-    New-Item -ItemType Directory -Path $LocalInstallDir -Force | Out-Null
-}
-
-$TargetExe = "$LocalInstallDir\BinBox Studio.exe"
-$OldExe = "$LocalInstallDir\BinBox Studio.exe.old"
-$AppExe = "$LocalInstallDir\app.exe"
-
-# Ky thuat rename de tranh bi Windows khoa file khi dang mo
-if (Test-Path $TargetExe) {
+if ($HasMsvc) {
+    Write-Host "  -> Tim thay MSVC toolchain, tien hanh bien dich Rust Release..." -ForegroundColor Green
+    Push-Location $TauriDir
     try {
-        Move-Item -Path $TargetExe -Destination $OldExe -Force -ErrorAction SilentlyContinue
-    } catch {}
-}
+        cargo build --release
+        if ($LASTEXITCODE -ne 0) { throw "Cargo build that bai!" }
+        Write-Host "  -> Rust Release binary build thanh cong!" -ForegroundColor Green
 
-Copy-Item -Path $BuiltExe -Destination $TargetExe -Force
-Copy-Item -Path $BuiltExe -Destination $AppExe -Force
-
-$LoaderDll = "$TauriDir\target\x86_64-pc-windows-gnu\release\WebView2Loader.dll"
-if (Test-Path $LoaderDll) {
-    Copy-Item -Path $LoaderDll -Destination "$LocalInstallDir\WebView2Loader.dll" -Force
+        $BuiltExe = "$TauriDir\target\release\app.exe"
+        if (Test-Path $BuiltExe) {
+            Copy-Item -Path $BuiltExe -Destination "$LocalInstallDir\BinBox Studio.exe" -Force
+            Copy-Item -Path $BuiltExe -Destination "$LocalInstallDir\app.exe" -Force
+            Write-Host "  -> Da cap nhat file thuc thi tai $LocalInstallDir" -ForegroundColor Green
+        }
+    } finally {
+        Pop-Location
+    }
+} else {
+    Write-Host "  [i] May khong co MSVC build tools (link.exe). May chu GitHub Actions se dam nhiem viec dong goi release chinh thuc de dam bao on dinh toi da." -ForegroundColor Cyan
 }
-Write-Host "  -> Da cap nhat BinBox Studio.exe va WebView2Loader.dll tai $LocalInstallDir" -ForegroundColor Green
 
 # [5/5] Git Add, Commit & Push lên GitHub
 if (-not $NoPush) {
