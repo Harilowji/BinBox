@@ -86,7 +86,12 @@ if (Test-Path $TargetExe) {
 
 Copy-Item -Path $BuiltExe -Destination $TargetExe -Force
 Copy-Item -Path $BuiltExe -Destination $AppExe -Force
-Write-Host "  -> Da cap nhat BinBox Studio.exe tai $LocalInstallDir" -ForegroundColor Green
+
+$LoaderDll = "$TauriDir\target\x86_64-pc-windows-gnu\release\WebView2Loader.dll"
+if (Test-Path $LoaderDll) {
+    Copy-Item -Path $LoaderDll -Destination "$LocalInstallDir\WebView2Loader.dll" -Force
+}
+Write-Host "  -> Da cap nhat BinBox Studio.exe va WebView2Loader.dll tai $LocalInstallDir" -ForegroundColor Green
 
 # [5/5] Git Add, Commit & Push lên GitHub
 if (-not $NoPush) {
