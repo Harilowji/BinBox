@@ -5,6 +5,7 @@ import { useSessions } from "../store/sessions";
 import { PanelHeader, type HeadAction } from "../panel/PanelHeader";
 import { useThemeStore } from "../theme/useTheme";
 import { ContextMenu, useContextMenu, type MenuItem } from "../ui/ContextMenu";
+import { readClipboardText, writeClipboardText } from "./clipboard";
 import type { ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 
@@ -36,11 +37,17 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
 
   const { menu, openMenu, closeMenu } = useContextMenu();
 
+  const focusTerminal = useCallback(() => {
+    if (panelKey) useSessions.getState().focus(panelKey);
+    term.current?.focus();
+  }, [panelKey, term]);
+
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       const t = term.current;
+      t?.focus();
       const hasSel = t ? t.hasSelection() : false;
 
       const items: MenuItem[] = [
@@ -67,7 +74,7 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
           disabled: !hasSel,
           onClick: () => {
             if (t && t.hasSelection()) {
-              navigator.clipboard.writeText(t.getSelection()).catch(() => {});
+              writeClipboardText(t.getSelection()).catch(() => {});
               t.clearSelection();
             }
           },
@@ -79,7 +86,7 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
           disabled: !hasSel,
           onClick: () => {
             if (t && t.hasSelection()) {
-              navigator.clipboard.writeText(t.getSelection()).catch(() => {});
+              writeClipboardText(t.getSelection()).catch(() => {});
               t.clearSelection();
             }
           },
@@ -89,8 +96,11 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
           label: "Paste",
           shortcut: "Ctrl+V",
           onClick: () => {
-            navigator.clipboard.readText().then((text) => {
-              if (text && t) t.paste(text);
+            readClipboardText().then((text) => {
+              if (text && t) {
+                t.paste(text);
+                t.focus();
+              }
             }).catch(() => {});
           },
         },
@@ -99,8 +109,11 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
           label: "Paste as plain text",
           shortcut: "Ctrl+Shift+V",
           onClick: () => {
-            navigator.clipboard.readText().then((text) => {
-              if (text && t) t.paste(text);
+            readClipboardText().then((text) => {
+              if (text && t) {
+                t.paste(text);
+                t.focus();
+              }
             }).catch(() => {});
           },
         },
@@ -145,6 +158,123 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
   const lastBlock = blocks.length > 0 ? blocks[blocks.length - 1] : null;
   const title = appTitle(running, shell);
 
+  // Lắng nghe sự kiện paste từ DOM (kể cả khi WebView2 dispatch DOM paste)
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const handleDomPaste = (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData("text");
+      if (text && term.current) {
+        e.preventDefault();
+        term.current.paste(text);
+      } else {
+        readClipboardText().then((t) => {
+          if (t && term.current) term.current.paste(t);
+        });
+      }
+    };
+    el.addEventListener("paste", handleDomPaste);
+    return () => el.removeEventListener("paste", handleDomPaste);
+  }, [term]);
+
+  // Fallback bắt phím tắt cấp cửa sổ khi terminal panel đang được focus nhưng xterm-helper-textarea bị trượt focus
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const activePanelKey = useSessions.getState().focused;
+      if (panelKey && activePanelKey && activePanelKey !== panelKey) return;
+
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          (activeEl.tagName === "TEXTAREA" && !activeEl.classList.contains("xterm-helper-textarea")) ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
+
+      const helper = host.current?.querySelector(".xterm-helper-textarea");
+      if (activeEl === helper) {
+        return;
+      }
+
+      const isKey = (letter: string, code: number) => {
+        const lower = letter.toLowerCase();
+        const upper = letter.toUpperCase();
+        return (
+          e.code === `Key${upper}` ||
+          e.keyCode === code ||
+          e.which === code ||
+          e.key === lower ||
+          e.key === upper
+        );
+      };
+
+      // Ctrl+V / Ctrl+Shift+V
+      if (e.ctrlKey && !e.altKey && isKey("v", 86)) {
+        e.preventDefault();
+        e.stopPropagation();
+        readClipboardText().then((text) => {
+          if (text && term.current) {
+            term.current.paste(text);
+            term.current.focus();
+          }
+        });
+        return;
+      }
+
+      // Ctrl+C / Ctrl+Shift+C
+      if (e.ctrlKey && !e.altKey && isKey("c", 67)) {
+        if (term.current?.hasSelection()) {
+          e.preventDefault();
+          e.stopPropagation();
+          writeClipboardText(term.current.getSelection()).catch(() => {});
+          term.current.clearSelection();
+          term.current.focus();
+          return;
+        }
+      }
+
+      // Ctrl+A / Ctrl+Shift+A
+      if (e.ctrlKey && !e.altKey && isKey("a", 65)) {
+        e.preventDefault();
+        e.stopPropagation();
+        term.current?.selectAll();
+        term.current?.focus();
+        return;
+      }
+
+      // Ctrl+X
+      if (e.ctrlKey && !e.altKey && !e.shiftKey && isKey("x", 88)) {
+        if (term.current?.hasSelection()) {
+          e.preventDefault();
+          e.stopPropagation();
+          writeClipboardText(term.current.getSelection()).catch(() => {});
+          term.current.clearSelection();
+          term.current.focus();
+          return;
+        }
+      }
+
+      // Ctrl+L
+      if (e.ctrlKey && !e.altKey && !e.shiftKey && isKey("l", 76)) {
+        e.preventDefault();
+        e.stopPropagation();
+        term.current?.clear();
+        term.current?.focus();
+        return;
+      }
+
+      // Tự động kéo focus về terminal khi người dùng nhấn phím ký tự thông thường
+      if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1) {
+        term.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [panelKey, term]);
+
   const actions: HeadAction[] =
     blocks.length > 0
       ? [
@@ -177,7 +307,11 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
       : [];
 
   return (
-    <div className="panel terminal-panel">
+    <div
+      className="panel terminal-panel"
+      onMouseDown={focusTerminal}
+      onClick={focusTerminal}
+    >
       <PanelHeader
         panelKey={panelKey}
         kind="term"
@@ -201,8 +335,20 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
           </>
         }
       />
-      <div className="term" ref={host} onContextMenu={handleContextMenu} />
-      <ContextMenu menu={menu} onClose={closeMenu} />
+      <div
+        className="term"
+        ref={host}
+        onContextMenu={handleContextMenu}
+        onMouseDown={focusTerminal}
+        onClick={focusTerminal}
+      />
+      <ContextMenu
+        menu={menu}
+        onClose={() => {
+          closeMenu();
+          focusTerminal();
+        }}
+      />
     </div>
   );
 }

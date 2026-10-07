@@ -162,6 +162,84 @@ pub fn app_open_emoji_picker() -> Result<(), String> {
     Ok(())
 }
 
+/// Đọc text từ Clipboard của Windows trực tiếp qua Win32 API (không bị chặn bởi browser sandbox).
+#[tauri::command]
+pub fn app_clipboard_read_text() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        extern "system" {
+            fn OpenClipboard(hWndNewOwner: *mut std::ffi::c_void) -> i32;
+            fn CloseClipboard() -> i32;
+            fn GetClipboardData(uFormat: u32) -> *mut std::ffi::c_void;
+            fn GlobalLock(hMem: *mut std::ffi::c_void) -> *mut u16;
+            fn GlobalUnlock(hMem: *mut std::ffi::c_void) -> i32;
+        }
+        const CF_UNICODETEXT: u32 = 13;
+        unsafe {
+            if OpenClipboard(std::ptr::null_mut()) != 0 {
+                let h = GetClipboardData(CF_UNICODETEXT);
+                let text = if !h.is_null() {
+                    let ptr = GlobalLock(h);
+                    if !ptr.is_null() {
+                        let mut len = 0;
+                        while *ptr.add(len) != 0 {
+                            len += 1;
+                        }
+                        let slice = std::slice::from_raw_parts(ptr, len);
+                        let s = String::from_utf16_lossy(slice);
+                        let _ = GlobalUnlock(h);
+                        s
+                    } else {
+                        String::new()
+                    }
+                } else {
+                    String::new()
+                };
+                let _ = CloseClipboard();
+                return Ok(text);
+            }
+        }
+    }
+    Ok(String::new())
+}
+
+/// Ghi text vào Clipboard của Windows trực tiếp qua Win32 API.
+#[tauri::command]
+pub fn app_clipboard_write_text(text: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        extern "system" {
+            fn OpenClipboard(hWndNewOwner: *mut std::ffi::c_void) -> i32;
+            fn CloseClipboard() -> i32;
+            fn EmptyClipboard() -> i32;
+            fn SetClipboardData(uFormat: u32, hMem: *mut std::ffi::c_void) -> *mut std::ffi::c_void;
+            fn GlobalAlloc(uFlags: u32, dwBytes: usize) -> *mut std::ffi::c_void;
+            fn GlobalLock(hMem: *mut std::ffi::c_void) -> *mut u16;
+            fn GlobalUnlock(hMem: *mut std::ffi::c_void) -> i32;
+        }
+        const CF_UNICODETEXT: u32 = 13;
+        const GMEM_MOVEABLE: u32 = 0x0002;
+        let wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
+        let bytes = wide.len() * std::mem::size_of::<u16>();
+        unsafe {
+            if OpenClipboard(std::ptr::null_mut()) != 0 {
+                let _ = EmptyClipboard();
+                let h = GlobalAlloc(GMEM_MOVEABLE, bytes);
+                if !h.is_null() {
+                    let ptr = GlobalLock(h);
+                    if !ptr.is_null() {
+                        std::ptr::copy_nonoverlapping(wide.as_ptr(), ptr, wide.len());
+                        let _ = GlobalUnlock(h);
+                        let _ = SetClipboardData(CF_UNICODETEXT, h);
+                    }
+                }
+                let _ = CloseClipboard();
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Nhớ cửa sổ có đang maximize hay không ngay trước khi vào fullscreen, để thoát ra thì
 /// trả lại đúng trạng thái cũ chứ không rơi về kích thước cửa sổ nhỏ.
 #[cfg(target_os = "windows")]

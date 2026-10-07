@@ -9,6 +9,7 @@ import { registerFileLinkProvider } from "./links";
 import { Osc133Tracker, type CommandBlock } from "./osc133";
 import { useSessions } from "../store/sessions";
 import { notifyTerminalTyping } from "../dock/dockState";
+import { readClipboardText, writeClipboardText } from "./clipboard";
 
 export type PtyState = "starting" | "running" | "exited" | "error";
 
@@ -361,56 +362,79 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
     });
 
     term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
-      // Ctrl+C: đang bôi đen thì copy, không bôi đen thì để nguyên cho shell ngắt lệnh.
-      // Đây là quy ước của mọi terminal Linux; bản trước luôn gửi ^C nên không copy nổi.
-      if (e.type === "keydown" && e.ctrlKey && !e.altKey && !e.shiftKey && e.key === "c") {
-        if (term.hasSelection()) {
-          navigator.clipboard.writeText(term.getSelection()).catch(() => {});
-          term.clearSelection();
+      const isKey = (letter: string, code: number) => {
+        const lower = letter.toLowerCase();
+        const upper = letter.toUpperCase();
+        return (
+          e.code === `Key${upper}` ||
+          e.keyCode === code ||
+          e.which === code ||
+          e.key === lower ||
+          e.key === upper
+        );
+      };
+
+      if (e.type === "keydown") {
+        // Ctrl+C / Ctrl+Shift+C: đang bôi đen thì copy, không bôi đen thì để nguyên cho shell ngắt lệnh.
+        if (e.ctrlKey && !e.altKey && isKey("c", 67)) {
+          if (term.hasSelection()) {
+            writeClipboardText(term.getSelection()).catch(() => {});
+            term.clearSelection();
+            e.preventDefault();
+            return false;
+          }
+          if (e.shiftKey) {
+            e.preventDefault();
+            return false;
+          }
+          // Không bôi đen: để nguyên 0x03 đi xuống shell như mọi terminal.
+          return true;
+        }
+
+        // Ctrl+V / Ctrl+Shift+V: Dán trực tiếp từ clipboard vào terminal.
+        if (e.ctrlKey && !e.altKey && isKey("v", 86)) {
+          readClipboardText().then((t) => {
+            if (t) term.paste(t);
+          }).catch(() => {});
           e.preventDefault();
           return false;
         }
-        // Không bôi đen: để nguyên `0x03` đi xuống shell như mọi terminal.
-        //
-        // ⚠️ Byte đó **không ngắt được lệnh đang chạy** trên ConPTY ở đây — lỗi có sẵn, đã
-        // đo kỹ và ghi vào CHECKLIST (phase 14, mục Deviations). Ở prompt trống thì nó vẫn
-        // đúng việc: PSReadLine dùng chính ký tự này để xoá dòng đang gõ.
-        return true;
-      }
-      // Ctrl+V: Dán trực tiếp từ clipboard vào terminal (chuẩn Windows Terminal).
-      if (e.type === "keydown" && e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === "v" || e.key === "V")) {
-        navigator.clipboard.readText().then((t) => {
-          if (t) term.paste(t);
-        }).catch(() => {});
-        e.preventDefault();
-        return false;
-      }
-      // Ctrl+Shift+C / Ctrl+Shift+V — bản tường minh, không phụ thuộc có bôi đen hay không.
-      if (e.type === "keydown" && e.ctrlKey && e.shiftKey && (e.key === "C" || e.key === "c")) {
-        navigator.clipboard.writeText(term.getSelection()).catch(() => {});
-        e.preventDefault();
-        return false;
-      }
-      if (e.type === "keydown" && e.ctrlKey && e.shiftKey && (e.key === "V" || e.key === "v")) {
-        navigator.clipboard.readText().then((t) => t && term.paste(t)).catch(() => {});
-        e.preventDefault();
-        return false;
-      }
-      // Ctrl+Shift+A: Chọn tất cả nội dung trong terminal.
-      if (e.type === "keydown" && e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
-        term.selectAll();
-        e.preventDefault();
-        return false;
-      }
-      if (e.ctrlKey && e.type === "keydown") {
-        if (e.key === "ArrowUp") {
+
+        // Ctrl+X: Cut vùng chọn trong terminal.
+        if (e.ctrlKey && !e.altKey && !e.shiftKey && isKey("x", 88)) {
+          if (term.hasSelection()) {
+            writeClipboardText(term.getSelection()).catch(() => {});
+            term.clearSelection();
+            e.preventDefault();
+            return false;
+          }
+        }
+
+        // Ctrl+A / Ctrl+Shift+A: Chọn tất cả nội dung trong terminal.
+        if (e.ctrlKey && !e.altKey && isKey("a", 65)) {
+          term.selectAll();
           e.preventDefault();
-          tracker.jumpToPreviousCommand();
           return false;
-        } else if (e.key === "ArrowDown") {
+        }
+
+        // Ctrl+L: Xóa trắng màn hình terminal.
+        if (e.ctrlKey && !e.altKey && !e.shiftKey && isKey("l", 76)) {
+          term.clear();
           e.preventDefault();
-          tracker.jumpToNextCommand();
           return false;
+        }
+
+        // Chuyển khối lệnh OSC 133
+        if (e.ctrlKey) {
+          if (e.key === "ArrowUp" || e.code === "ArrowUp") {
+            e.preventDefault();
+            tracker.jumpToPreviousCommand();
+            return false;
+          } else if (e.key === "ArrowDown" || e.code === "ArrowDown") {
+            e.preventDefault();
+            tracker.jumpToNextCommand();
+            return false;
+          }
         }
       }
       return true;
@@ -484,7 +508,7 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
     if (all.length > 0) {
       const last = all[all.length - 1];
       const text = trackerRef.current.getBlockOutput(last);
-      navigator.clipboard.writeText(text);
+      writeClipboardText(text).catch(() => {});
     }
   };
 
