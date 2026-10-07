@@ -144,6 +144,24 @@ pub fn app_window_system_menu(window: tauri::Window) -> Result<(), String> {
     Ok(())
 }
 
+/// Mở Emoji Picker nguyên bản của Windows (Win + Period).
+#[tauri::command]
+pub fn app_open_emoji_picker() -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use windows::Win32::UI::Input::KeyboardAndMouse::{
+            keybd_event, KEYEVENTF_KEYUP, VK_LWIN, VK_OEM_PERIOD,
+        };
+        unsafe {
+            keybd_event(VK_LWIN.0 as u8, 0, Default::default(), 0);
+            keybd_event(VK_OEM_PERIOD.0 as u8, 0, Default::default(), 0);
+            keybd_event(VK_OEM_PERIOD.0 as u8, 0, KEYEVENTF_KEYUP, 0);
+            keybd_event(VK_LWIN.0 as u8, 0, KEYEVENTF_KEYUP, 0);
+        }
+    }
+    Ok(())
+}
+
 /// Nhớ cửa sổ có đang maximize hay không ngay trước khi vào fullscreen, để thoát ra thì
 /// trả lại đúng trạng thái cũ chứ không rơi về kích thước cửa sổ nhỏ.
 #[cfg(target_os = "windows")]

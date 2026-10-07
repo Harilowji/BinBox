@@ -6,6 +6,7 @@ export type MenuItem = {
   id: string;
   label: string;
   icon?: ReactNode;
+  shortcut?: string;
   /** Vạch ngăn *phía trên* mục này. Nhóm việc lành với việc phá là lỗi thiết kế menu. */
   sep?: boolean;
   disabled?: boolean;
@@ -110,8 +111,9 @@ export function ContextMenu({ menu, onClose }: { menu: MenuState; onClose: () =>
             it.onClick();
           }}
         >
-          <span className="ctx-icon">{it.icon}</span>
+          {it.icon ? <span className="ctx-icon">{it.icon}</span> : null}
           <span className="ctx-label">{it.label}</span>
+          {it.shortcut ? <span className="ctx-shortcut">{it.shortcut}</span> : null}
         </button>
       ))}
     </div>,

@@ -377,6 +377,14 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
         // đúng việc: PSReadLine dùng chính ký tự này để xoá dòng đang gõ.
         return true;
       }
+      // Ctrl+V: Dán trực tiếp từ clipboard vào terminal (chuẩn Windows Terminal).
+      if (e.type === "keydown" && e.ctrlKey && !e.altKey && !e.shiftKey && (e.key === "v" || e.key === "V")) {
+        navigator.clipboard.readText().then((t) => {
+          if (t) term.paste(t);
+        }).catch(() => {});
+        e.preventDefault();
+        return false;
+      }
       // Ctrl+Shift+C / Ctrl+Shift+V — bản tường minh, không phụ thuộc có bôi đen hay không.
       if (e.type === "keydown" && e.ctrlKey && e.shiftKey && (e.key === "C" || e.key === "c")) {
         navigator.clipboard.writeText(term.getSelection()).catch(() => {});
@@ -385,6 +393,12 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
       }
       if (e.type === "keydown" && e.ctrlKey && e.shiftKey && (e.key === "V" || e.key === "v")) {
         navigator.clipboard.readText().then((t) => t && term.paste(t)).catch(() => {});
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+Shift+A: Chọn tất cả nội dung trong terminal.
+      if (e.type === "keydown" && e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
+        term.selectAll();
         e.preventDefault();
         return false;
       }

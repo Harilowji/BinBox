@@ -353,6 +353,7 @@ pub fn run() {
             window_cmd::app_window_close,
             window_cmd::app_window_set_fullscreen,
             window_cmd::app_window_system_menu,
+            window_cmd::app_open_emoji_picker,
             app_window_set_vibrancy,
             wallpaper_engine::watcher::we_set_active,
             wallpaper_engine::watcher::we_get_current

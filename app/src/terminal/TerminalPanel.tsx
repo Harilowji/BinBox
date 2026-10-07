@@ -1,8 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { usePty } from "./usePty";
 import { useSessions } from "../store/sessions";
 import { PanelHeader, type HeadAction } from "../panel/PanelHeader";
 import { useThemeStore } from "../theme/useTheme";
+import { ContextMenu, useContextMenu, type MenuItem } from "../ui/ContextMenu";
 import type { ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 
@@ -27,9 +29,110 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
   const fontSize = useThemeStore((s) => s.opts.terminalFontSize);
   const cursorStyle = useThemeStore((s) => s.opts.terminalCursorStyle);
 
-  const { state, error, blocks, running, cwd: liveCwd, copyLastOutput, jumpPrev, jumpNext } = usePty(
+  const { state, error, blocks, running, cwd: liveCwd, copyLastOutput, jumpPrev, jumpNext, term } = usePty(
     host,
     { shell, cwd, theme, panelKey, panelVisible: visible, scrollback, fontSize, cursorStyle },
+  );
+
+  const { menu, openMenu, closeMenu } = useContextMenu();
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const t = term.current;
+      const hasSel = t ? t.hasSelection() : false;
+
+      const items: MenuItem[] = [
+        {
+          id: "emoji",
+          label: "Emoji",
+          shortcut: "Win+Period",
+          onClick: () => {
+            invoke("app_open_emoji_picker").catch(() => {});
+          },
+        },
+        {
+          id: "undo",
+          label: "Undo",
+          shortcut: "Ctrl+Z",
+          onClick: () => {
+            t?.input("\x1a");
+          },
+        },
+        {
+          id: "cut",
+          label: "Cut",
+          shortcut: "Ctrl+X",
+          disabled: !hasSel,
+          onClick: () => {
+            if (t && t.hasSelection()) {
+              navigator.clipboard.writeText(t.getSelection()).catch(() => {});
+              t.clearSelection();
+            }
+          },
+        },
+        {
+          id: "copy",
+          label: "Copy",
+          shortcut: "Ctrl+C",
+          disabled: !hasSel,
+          onClick: () => {
+            if (t && t.hasSelection()) {
+              navigator.clipboard.writeText(t.getSelection()).catch(() => {});
+              t.clearSelection();
+            }
+          },
+        },
+        {
+          id: "paste",
+          label: "Paste",
+          shortcut: "Ctrl+V",
+          onClick: () => {
+            navigator.clipboard.readText().then((text) => {
+              if (text && t) t.paste(text);
+            }).catch(() => {});
+          },
+        },
+        {
+          id: "paste-plain",
+          label: "Paste as plain text",
+          shortcut: "Ctrl+Shift+V",
+          onClick: () => {
+            navigator.clipboard.readText().then((text) => {
+              if (text && t) t.paste(text);
+            }).catch(() => {});
+          },
+        },
+        {
+          id: "select-all",
+          label: "Select all",
+          shortcut: "Ctrl+A",
+          onClick: () => {
+            t?.selectAll();
+          },
+        },
+        {
+          id: "clear",
+          label: "Clear terminal",
+          shortcut: "Ctrl+L",
+          sep: true,
+          onClick: () => {
+            t?.clear();
+          },
+        },
+        {
+          id: "reset",
+          label: "Reset terminal session",
+          onClick: () => {
+            t?.reset();
+          },
+        },
+      ];
+
+      openMenu(e, items);
+    },
+    [term, openMenu],
   );
 
   // Đẩy thư mục thật lên store để Ctrl+Shift+D nhân đôi panel *ở đúng chỗ shell đang đứng*,
@@ -98,7 +201,8 @@ export function TerminalPanel({ panelKey, shell, cwd, theme, visible }: Props) {
           </>
         }
       />
-      <div className="term" ref={host} />
+      <div className="term" ref={host} onContextMenu={handleContextMenu} />
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }
