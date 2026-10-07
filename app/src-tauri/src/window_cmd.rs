@@ -240,6 +240,21 @@ pub fn app_clipboard_write_text(text: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Chạy tập lệnh cập nhật 1-Click (Build + Update App + Push GitHub) trong cửa sổ Console riêng.
+#[tauri::command]
+pub fn app_launch_dev_update() -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let script_path = r"D:\Project\01_My_GitHub_Repos\BinBox\update.bat";
+        Command::new("cmd")
+            .args(["/c", "start", "BinBox Studio - Auto Update & GitHub Push", script_path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 /// Nhớ cửa sổ có đang maximize hay không ngay trước khi vào fullscreen, để thoát ra thì
 /// trả lại đúng trạng thái cũ chứ không rơi về kích thước cửa sổ nhỏ.
 #[cfg(target_os = "windows")]

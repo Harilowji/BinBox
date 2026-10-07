@@ -712,7 +712,7 @@ export function SettingsModal({ onClose }: Props) {
 
             {page === "shortcuts" && (
               <>
-                <Group label="BinBox Studio Build">
+                <Group label="BinBox Studio Build & Update">
                   <ActionRow
                     icon={<Icon name="download" size={22} />}
                     label={`BinBox Studio ${appVersion || "..."}`}
@@ -727,6 +727,17 @@ export function SettingsModal({ onClose }: Props) {
                             : "Check for updates"
                     }
                     onClick={updateState === "available" ? handleInstallUpdate : handleCheckForUpdate}
+                  />
+                  <ActionRow
+                    icon={<Icon name="refresh" size={22} />}
+                    label="1-Click Update & Push to GitHub"
+                    note="Tự động biên dịch bản mới, cập nhật app và đồng bộ commit lên GitHub."
+                    action="Cập nhật ngay"
+                    onClick={() => {
+                      invoke("app_launch_dev_update").catch((err) => {
+                        console.error("Failed to launch dev update:", err);
+                      });
+                    }}
                   />
                 </Group>
 

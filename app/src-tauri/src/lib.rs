@@ -356,6 +356,7 @@ pub fn run() {
             window_cmd::app_open_emoji_picker,
             window_cmd::app_clipboard_read_text,
             window_cmd::app_clipboard_write_text,
+            window_cmd::app_launch_dev_update,
             app_window_set_vibrancy,
             wallpaper_engine::watcher::we_set_active,
             wallpaper_engine::watcher::we_get_current
