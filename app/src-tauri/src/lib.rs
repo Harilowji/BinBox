@@ -139,12 +139,12 @@ fn app_window_set_vibrancy(window: tauri::Window, enabled: bool) -> Result<(), S
     #[cfg(target_os = "windows")]
     {
         if enabled {
-            if window_vibrancy::apply_acrylic(&window, Some((16, 18, 24, 120))).is_err() {
-                window_vibrancy::apply_mica(&window, Some(true)).map_err(|e| e.to_string())?;
+            if window_vibrancy::apply_mica(&window, Some(true)).is_err() {
+                let _ = window_vibrancy::apply_acrylic(&window, Some((16, 18, 24, 120)));
             }
         } else {
-            let _ = window_vibrancy::clear_acrylic(&window);
             let _ = window_vibrancy::clear_mica(&window);
+            let _ = window_vibrancy::clear_acrylic(&window);
         }
     }
     Ok(())
@@ -272,9 +272,9 @@ pub fn run() {
                 #[cfg(target_os = "windows")]
                 {
                     install_webview_shortcuts(&win);
-                    // Áp dụng Acrylic blur / Mica cho Windows 11/10
-                    if let Err(_) = window_vibrancy::apply_acrylic(&win, Some((16, 18, 24, 120))) {
-                        let _ = window_vibrancy::apply_mica(&win, Some(true));
+                    // Áp dụng Mica / Acrylic blur cho Windows 11/10
+                    if let Err(_) = window_vibrancy::apply_mica(&win, Some(true)) {
+                        let _ = window_vibrancy::apply_acrylic(&win, Some((16, 18, 24, 120)));
                     }
                 }
             }

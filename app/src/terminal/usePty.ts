@@ -99,6 +99,8 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
         opts.fontFamily ??
         '"CaskaydiaCove Nerd Font","Cascadia Mono",Consolas,monospace',
       fontSize: opts.fontSize ?? 15,
+      lineHeight: 1.2,
+      letterSpacing: 0,
       cursorBlink: true,
       cursorStyle: opts.cursorStyle ?? "block",
       scrollback: normalizeScrollback(opts.scrollback),
@@ -120,7 +122,13 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
         const gl = new WebglAddon();
         gl.onContextLoss(() => {
           if (webglRef.current === gl) webglRef.current = null;
-          gl.dispose();
+          try { gl.dispose(); } catch {}
+          // Tự động khôi phục render canvas thông thường khi mất ngữ cảnh GPU
+          setTimeout(() => {
+            try {
+              term.refresh(0, Math.max(0, term.rows - 1));
+            } catch {}
+          }, 60);
         });
         term.loadAddon(gl);
         webglRef.current = gl;
@@ -131,7 +139,12 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
     // Workspace khởi động ở trạng thái ẩn dùng renderer mặc định cho tới lần đầu xuất hiện,
     // tránh tạo rồi huỷ texture ngay trong 700 ms đầu của phiên.
     if (panelVisibleRef.current) attachWebgl();
-    fit.fit();
+    try {
+      fit.fit();
+    } catch {}
+    requestAnimationFrame(() => {
+      try { fit.fit(); } catch {}
+    });
     termRef.current = term;
     // Móc để bài kiểm tự động đọc được trạng thái thật của xterm (`hasSelection`, buffer…).
     // Không có nó thì mọi phép đo về terminal đều phải suy ra từ pixel hoặc từ DOM, và
@@ -182,11 +195,11 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
         requestAnimationFrame(() => {
           flush();
         });
-      } else {
-        setTimeout(() => {
-          flush();
-        }, 16);
       }
+      // Luôn có timeout dự phòng nếu cửa sổ bị thu nhỏ (requestAnimationFrame bị trình duyệt tạm dừng)
+      setTimeout(() => {
+        if (flushScheduled) flush();
+      }, 20);
     };
 
     // Gắn TRƯỚC khi spawn. Xem chú thích trên.
@@ -288,7 +301,7 @@ export function usePty(host: React.RefObject<HTMLDivElement | null>, opts: PtyOp
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = window.setTimeout(() => {
           invoke("pty_resize", { sessionId: id, rows: term.rows, cols: term.cols }).catch(() => {});
-        }, 90);
+        }, 30);
       }
     };
     const handleResize = () => {
